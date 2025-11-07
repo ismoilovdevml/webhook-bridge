@@ -1,0 +1,16 @@
+[Unit]
+Description=GitLab Event Bridge
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/gitlab-event-bridge
+Environment="PATH=/opt/gitlab-event-bridge/venv/bin"
+EnvironmentFile=/opt/gitlab-event-bridge/.env
+ExecStart=/opt/gitlab-event-bridge/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
