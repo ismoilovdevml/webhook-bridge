@@ -28,6 +28,8 @@ class BitbucketParser(BaseParser):
             return self._parse_pull_request(payload, event_key)
         elif "issue" in event_key:
             return self._parse_issue(payload, event_key)
+        elif "pipeline" in event_key or "build_status" in event_key:
+            return self._parse_pipeline(payload)
         else:
             return self._parse_unknown(payload)
 
@@ -129,6 +131,55 @@ class BitbucketParser(BaseParser):
             issue_url=issue.get("links", {}).get("html", {}).get("href", ""),
             issue_state=issue.get("state", ""),
             issue_action=action,
+            raw_data=payload,
+        )
+
+    def _parse_pipeline(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse pipeline/build status event"""
+        repository = payload.get("repository", {})
+        actor = payload.get("actor", {})
+
+        # Bitbucket Pipelines can send either 'pipeline_completed' or 'build_status' events
+        pipeline = payload.get("pipeline", {})
+        build_status = payload.get("build_status", {})
+
+        # Use pipeline data if available, otherwise build_status
+        if pipeline:
+            pipeline_id = pipeline.get("build_number")
+            status = pipeline.get("state", {}).get("name", "").lower()
+            ref = pipeline.get("target", {}).get("ref_name", "")
+            duration = pipeline.get("duration_in_seconds")
+            url = pipeline.get("url", "")
+        else:
+            pipeline_id = build_status.get("key")
+            status = build_status.get("state", "").lower()
+            ref = build_status.get("refname", "")
+            duration = None
+            url = build_status.get("url", "")
+
+        # Normalize status names
+        if status in ["successful", "success"]:
+            status = "success"
+        elif status in ["failed", "failure"]:
+            status = "failed"
+        elif status in ["stopped", "stopped"]:
+            status = "canceled"
+        elif status in ["pending", "in_progress"]:
+            status = "running"
+
+        return ParsedEvent(
+            platform="bitbucket",
+            event_type="pipeline",
+            project=repository.get("full_name", ""),
+            project_url=repository.get("links", {}).get("html", {}).get("href", ""),
+            author=actor.get("display_name", "Unknown"),
+            author_username=actor.get("username", ""),
+            author_avatar=actor.get("links", {}).get("avatar", {}).get("href", None),
+            ref=ref,
+            pipeline_id=pipeline_id,
+            pipeline_status=status,
+            pipeline_url=url,
+            pipeline_duration=duration,
             raw_data=payload,
         )
 

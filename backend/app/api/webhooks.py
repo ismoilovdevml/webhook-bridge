@@ -48,7 +48,7 @@ async def process_and_send(
         event_type=parsed_event.event_type,
         project=parsed_event.project,
         author=parsed_event.author,
-        branch=parsed_event.branch,
+        branch=parsed_event.ref,  # ref contains branch/tag name
         provider_id=provider_model.id,
         status="pending",
         created_at=datetime.utcnow(),

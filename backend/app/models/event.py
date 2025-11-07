@@ -19,7 +19,7 @@ class Event(Base):
     )  # "push", "merge_request", etc.
     project = Column(String(200), nullable=False, index=True)  # "edcom/edcom-server"
     author = Column(String(100))  # "fatxulla"
-    branch = None
+    branch = Column(String(200), nullable=True)  # "main", "develop", etc.
     provider_id = Column(Integer, ForeignKey("providers.id"), nullable=True)
     provider_name = Column(String(100))  # Denormalized for quick access
     status = Column(
