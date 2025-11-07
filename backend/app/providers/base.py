@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 from ..utils.logger import get_logger
-from ..utils.exceptions import ProviderError, ConfigurationError
+from ..utils.exceptions import ConfigurationError
 
 logger = get_logger(__name__)
 

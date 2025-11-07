@@ -46,7 +46,10 @@ def setup_logging(level: str = "INFO", json_logs: bool = False) -> None:
     # Format for logs
     if json_logs:
         # JSON format for production
-        log_format = '{"time":"%(asctime)s","level":"%(levelname)s","name":"%(name)s","message":"%(message)s"}'
+        log_format = (
+            '{"time":"%(asctime)s","level":"%(levelname)s",'
+            '"name":"%(name)s","message":"%(message)s"}'
+        )
         formatter = logging.Formatter(log_format)
     else:
         # Human-readable format for development

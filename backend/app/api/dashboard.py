@@ -29,7 +29,7 @@ def get_dashboard_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
     # Provider stats
     total_providers = db.query(func.count(Provider.id)).scalar()
     active_providers = (
-        db.query(func.count(Provider.id)).filter(Provider.active == True).scalar()
+        db.query(func.count(Provider.id)).filter(Provider.active.is_(True)).scalar()
     )
 
     # Event stats

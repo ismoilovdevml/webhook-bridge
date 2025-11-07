@@ -74,11 +74,10 @@ class SlackBlocksFormatter(BaseFormatter):
             ]
 
             if mr_data.get("source_branch") and mr_data.get("target_branch"):
+                source = mr_data["source_branch"]
+                target = mr_data["target_branch"]
                 mr_fields.append(
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Merge:*\n`{mr_data['source_branch']}` → `{mr_data['target_branch']}`",
-                    }
+                    {"type": "mrkdwn", "text": f"*Merge:*\n`{source}` → `{target}`"}
                 )
 
             blocks.append({"type": "section", "fields": mr_fields})
@@ -157,13 +156,12 @@ class SlackBlocksFormatter(BaseFormatter):
             comment_data = event.raw_data
             comment_body = self._truncate(comment_data.get("body", ""), 150)
 
+            noteable_type = comment_data.get("noteable_type", "Unknown")
+            comment_text = f"*Comment on:* {noteable_type}\n\n{comment_body}"
             blocks.append(
                 {
                     "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"*Comment on:* {comment_data.get('noteable_type', 'Unknown')}\n\n{comment_body}",
-                    },
+                    "text": {"type": "mrkdwn", "text": comment_text},
                 }
             )
 
@@ -189,6 +187,9 @@ class SlackBlocksFormatter(BaseFormatter):
             )
 
         # Fallback text for notifications
-        fallback_text = f"{emoji} {event.event_type.replace('_', ' ').title()} in {event.project} by {event.author}"
+        event_title = event.event_type.replace("_", " ").title()
+        fallback_text = (
+            f"{emoji} {event_title} in {event.project} by {event.author}"
+        )
 
-        return {"blocks": blocks, "text": fallback_text}  # Fallback for notifications
+        return {"blocks": blocks, "text": fallback_text}

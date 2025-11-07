@@ -39,7 +39,10 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app
 app = FastAPI(
     title="Webhook Bridge API",
-    description="Universal webhook receiver for GitLab, GitHub, and Bitbucket. Forward Git events to Telegram, Slack, Discord, Mattermost, and Email.",
+    description=(
+        "Universal webhook receiver for GitLab, GitHub, and Bitbucket. "
+        "Forward Git events to Telegram, Slack, Discord, Mattermost, and Email."
+    ),
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",

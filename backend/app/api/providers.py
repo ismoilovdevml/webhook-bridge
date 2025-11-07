@@ -101,7 +101,8 @@ def create_provider(
     """
     # Validate provider type and config
     try:
-        provider_instance = get_provider(provider_data.type, provider_data.config)
+        # Validate config by creating provider instance
+        get_provider(provider_data.type, provider_data.config)
     except (ValueError, ConfigurationError) as e:
         raise HTTPException(
             status_code=400, detail=f"Invalid provider configuration: {str(e)}"

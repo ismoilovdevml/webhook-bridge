@@ -1,7 +1,7 @@
 """Discord Webhook provider."""
 
 import httpx
-from typing import Any, Dict, List
+from typing import Any, Dict
 from .base import BaseProvider
 from ..utils.logger import get_logger
 from ..utils.exceptions import ProviderError

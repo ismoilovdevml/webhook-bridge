@@ -28,4 +28,7 @@ class Event(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
     def __repr__(self):
-        return f"<Event(platform='{self.platform}', type='{self.event_type}', project='{self.project}')>"
+        return (
+            f"<Event(platform='{self.platform}', "
+            f"type='{self.event_type}', project='{self.project}')>"
+        )

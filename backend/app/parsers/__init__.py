@@ -32,8 +32,8 @@ def get_parser(headers: Dict[str, Any]) -> BaseParser:
         return BitbucketParser()
     else:
         raise ValueError(
-            "Unknown webhook platform. "
-            "Expected GitLab (X-Gitlab-Event), GitHub (X-GitHub-Event), or Bitbucket (X-Event-Key) headers."
+            "Unknown webhook platform. Expected GitLab (X-Gitlab-Event), "
+            "GitHub (X-GitHub-Event), or Bitbucket (X-Event-Key) headers."
         )
 
 

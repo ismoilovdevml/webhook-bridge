@@ -183,7 +183,7 @@ async def receive_webhook(
         )
 
         # Get all active providers
-        active_providers = db.query(Provider).filter(Provider.active == True).all()
+        active_providers = db.query(Provider).filter(Provider.active.is_(True)).all()
 
         if not active_providers:
             logger.warning("No active providers configured")
