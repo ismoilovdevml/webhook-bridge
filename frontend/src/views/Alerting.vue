@@ -1,162 +1,130 @@
 <template>
-  <div>
-    <div style="margin-bottom: 2rem;">
-      <h1 style="font-size: 2rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
-        <span>🔔</span> Alerting & Notifications
+  <div class="container">
+    <!-- Toast Notifications -->
+    <div class="toast-container">
+      <div
+        v-for="notification in notifications"
+        :key="notification.id"
+        class="toast"
+        :class="notification.type"
+      >
+        <span class="toast-icon">{{ notification.type === 'success' ? '✓' : '✕' }}</span>
+        <span class="toast-message">{{ notification.message }}</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; letter-spacing: -0.02em;">
+        <span style="font-size: 1.25rem;">🔔</span> Webhook Bridge
       </h1>
-      <p style="color: var(--text-secondary);">Configure multi-channel alerts for pipeline events • {{ providers.filter(p => p.active).length }} channels enabled</p>
+      <p style="color: var(--text-secondary); font-size: 13px;">Configure multi-channel alerts • {{ providers.filter(p => p.active).length }} active</p>
     </div>
 
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab" :class="{ active: currentTab === 'webhook' }" @click="currentTab = 'webhook'">
-        <span>🔧</span> Webhook Setup <span v-if="currentTab === 'webhook'">⚡</span>
+        Webhook Setup
       </button>
       <button class="tab" :class="{ active: currentTab === 'channels' }" @click="currentTab = 'channels'">
-        <span>⚙️</span> Channels ({{ providers.length }})
+        Channels
       </button>
       <button class="tab" :class="{ active: currentTab === 'history' }" @click="currentTab = 'history'">
-        <span>🕐</span> History
+        History
       </button>
     </div>
 
     <!-- Webhook Setup Tab -->
-    <div v-if="currentTab === 'webhook'" style="display: flex; flex-direction: column; gap: 1.5rem;">
-      <!-- Info Section -->
-      <div class="card" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3);">
-        <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-          <span>✅</span> Why use webhooks?
-        </h4>
-        <ul style="list-style: none; padding: 0;">
-          <li style="margin-bottom: 0.5rem;">⚡ <strong>Instant alerts</strong> - No delay, get notified immediately</li>
-          <li style="margin-bottom: 0.5rem;">🎯 <strong>Accurate</strong> - Platform sends event directly to us</li>
-          <li style="margin-bottom: 0.5rem;">📊 <strong>Efficient</strong> - No polling, saves resources</li>
-          <li>📦 <strong>Complete data</strong> - Full event information</li>
-        </ul>
-      </div>
-
-      <!-- GitLab Section -->
-      <div class="card">
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-          <div class="provider-icon" style="background: rgba(252, 109, 38, 0.1); color: #fc6d26;">
-            <GitLabIcon :size="32" />
-          </div>
-          <div>
-            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">GitLab Webhook</h3>
-            <p style="color: var(--text-secondary); font-size: 0.875rem;">Setup webhook for GitLab repositories</p>
-          </div>
-        </div>
-
+    <div v-if="currentTab === 'webhook'">
+      <!-- Webhook URL Card -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 0.5rem;">Universal Webhook URL</h3>
+        <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 1rem;">Use this URL for GitLab, GitHub, and Bitbucket - automatically detects platform</p>
         <div class="webhook-url-box">
           <span class="webhook-url-text">{{ webhookUrl }}</span>
           <button class="btn btn-primary btn-sm" @click="copyWebhookUrl()">
-            📋 Copy
+            Copy
           </button>
-        </div>
-        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
-          💡 This is a universal webhook URL. It automatically detects GitLab webhooks via headers.
-        </p>
-
-        <div class="card" style="background: var(--bg-primary); margin-top: 1rem;">
-          <h4 style="margin-bottom: 1rem;">Setup Instructions</h4>
-          <ol style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 2;">
-            <li><strong>Go to your GitLab project</strong><br><span style="font-size: 0.875rem;">Settings → Webhooks</span></li>
-            <li><strong>Paste the webhook URL above</strong><br><span style="font-size: 0.875rem;">In the "URL" field</span></li>
-            <li><strong>Select triggers</strong><br><span style="font-size: 0.875rem;">Push, Merge Requests, Issues, Pipeline, etc.</span></li>
-            <li><strong>Click "Add webhook"</strong><br><span style="font-size: 0.875rem;">Test it and you're done!</span></li>
-          </ol>
         </div>
       </div>
 
-      <!-- GitHub Section -->
-      <div class="card">
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-          <div class="provider-icon" style="background: rgba(36, 41, 47, 0.1); color: #24292f;">
-            <GitHubIcon :size="32" />
+      <!-- Platform Setup Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+        <!-- GitLab -->
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div class="provider-icon" style="background: rgba(252, 109, 38, 0.1); color: #fc6d26; width: 36px; height: 36px;">
+              <GitLabIcon :size="20" />
+            </div>
+            <div>
+              <h3 style="font-size: 14px; font-weight: 600; margin: 0;">GitLab</h3>
+              <p style="color: var(--text-secondary); font-size: 11px; margin: 0;">Settings → Webhooks</p>
+            </div>
           </div>
-          <div>
-            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">GitHub Webhook</h3>
-            <p style="color: var(--text-secondary); font-size: 0.875rem;">Setup webhook for GitHub repositories</p>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+            <li>• Select triggers (Push, MR, Issues)</li>
+            <li>• Click "Add webhook"</li>
+          </ul>
+        </div>
+
+        <!-- GitHub -->
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div class="provider-icon" style="background: rgba(36, 41, 47, 0.1); color: #fff; width: 36px; height: 36px;">
+              <GitHubIcon :size="20" />
+            </div>
+            <div>
+              <h3 style="font-size: 14px; font-weight: 600; margin: 0;">GitHub</h3>
+              <p style="color: var(--text-secondary); font-size: 11px; margin: 0;">Settings → Webhooks</p>
+            </div>
           </div>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+            <li>• Content type: application/json</li>
+            <li>• Select events & save</li>
+          </ul>
         </div>
 
-        <div class="webhook-url-box">
-          <span class="webhook-url-text">{{ webhookUrl }}</span>
-          <button class="btn btn-primary btn-sm" @click="copyWebhookUrl()">
-            📋 Copy
-          </button>
-        </div>
-        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
-          💡 This is a universal webhook URL. It automatically detects GitHub webhooks via headers.
-        </p>
-
-        <div class="card" style="background: var(--bg-primary); margin-top: 1rem;">
-          <h4 style="margin-bottom: 1rem;">Setup Instructions</h4>
-          <ol style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 2;">
-            <li><strong>Go to your GitHub repository</strong><br><span style="font-size: 0.875rem;">Settings → Webhooks → Add webhook</span></li>
-            <li><strong>Paste the webhook URL above</strong><br><span style="font-size: 0.875rem;">In the "Payload URL" field</span></li>
-            <li><strong>Content type: application/json</strong><br><span style="font-size: 0.875rem;">Select "application/json"</span></li>
-            <li><strong>Select events</strong><br><span style="font-size: 0.875rem;">Pushes, Pull requests, Issues, etc.</span></li>
-            <li><strong>Click "Add webhook"</strong><br><span style="font-size: 0.875rem;">GitHub will test it automatically</span></li>
-          </ol>
-        </div>
-      </div>
-
-      <!-- Bitbucket Section -->
-      <div class="card">
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-          <div class="provider-icon" style="background: rgba(33, 110, 225, 0.1); color: #216ee1;">
-            <BitbucketIcon :size="32" />
+        <!-- Bitbucket -->
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div class="provider-icon" style="background: rgba(33, 110, 225, 0.1); color: #216ee1; width: 36px; height: 36px;">
+              <BitbucketIcon :size="20" />
+            </div>
+            <div>
+              <h3 style="font-size: 14px; font-weight: 600; margin: 0;">Bitbucket</h3>
+              <p style="color: var(--text-secondary); font-size: 11px; margin: 0;">Repository → Webhooks</p>
+            </div>
           </div>
-          <div>
-            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Bitbucket Webhook</h3>
-            <p style="color: var(--text-secondary); font-size: 0.875rem;">Setup webhook for Bitbucket repositories</p>
-          </div>
-        </div>
-
-        <div class="webhook-url-box">
-          <span class="webhook-url-text">{{ webhookUrl }}</span>
-          <button class="btn btn-primary btn-sm" @click="copyWebhookUrl()">
-            📋 Copy
-          </button>
-        </div>
-        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
-          💡 This is a universal webhook URL. It automatically detects Bitbucket webhooks via headers.
-        </p>
-
-        <div class="card" style="background: var(--bg-primary); margin-top: 1rem;">
-          <h4 style="margin-bottom: 1rem;">Setup Instructions</h4>
-          <ol style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 2;">
-            <li><strong>Go to your Bitbucket repository</strong><br><span style="font-size: 0.875rem;">Repository settings → Webhooks → Add webhook</span></li>
-            <li><strong>Paste the webhook URL above</strong><br><span style="font-size: 0.875rem;">In the "URL" field</span></li>
-            <li><strong>Select triggers</strong><br><span style="font-size: 0.875rem;">Push, Pull requests, etc.</span></li>
-            <li><strong>Click "Save"</strong><br><span style="font-size: 0.875rem;">Bitbucket will validate the URL</span></li>
-          </ol>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+            <li>• Select triggers (Push, PR)</li>
+            <li>• Click "Save"</li>
+          </ul>
         </div>
       </div>
     </div>
 
     <!-- Channels Tab -->
-    <div v-if="currentTab === 'channels'" class="provider-layout">
-      <div class="provider-sidebar">
-        <div
+    <div v-if="currentTab === 'channels'">
+      <!-- Horizontal Provider Tabs -->
+      <div class="provider-tabs">
+        <button
           v-for="type in providerTypes"
           :key="type.id"
-          class="provider-item"
+          class="provider-tab"
           :class="{ active: selectedProvider === type.id }"
           @click="selectedProvider = type.id"
         >
-          <div class="provider-icon" :style="{ background: type.bgColor, color: type.color }">
-            <component :is="type.icon" :size="28" />
+          <div class="provider-icon-small" :style="{ background: type.bgColor, color: type.color }">
+            <component :is="type.icon" :size="20" />
           </div>
-          <div class="provider-info">
-            <div class="provider-name">{{ type.name }}</div>
-            <div class="provider-status">{{ getProviderStatus(type.id) }}</div>
-          </div>
-        </div>
+          <span>{{ type.name }}</span>
+          <span class="provider-badge" :class="{ enabled: getProviderStatus(type.id) === 'Enabled' }">
+            {{ getProviderStatus(type.id) === 'Enabled' ? '●' : '○' }}
+          </span>
+        </button>
       </div>
 
-      <div class="card">
+      <!-- Configuration Card -->
+      <div class="card" style="margin-top: 1rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <div style="display: flex; align-items: center; gap: 1rem;">
             <div class="provider-icon" :style="{ background: getCurrentProviderBgColor(), color: getCurrentProviderColor() }">
@@ -357,6 +325,7 @@ const currentTab = ref('webhook')
 const selectedProvider = ref('telegram')
 const configData = ref({})
 const searchQuery = ref('')
+const notifications = ref([])
 
 const providers = computed(() => providersStore.providers)
 const events = computed(() => eventsStore.events)
@@ -417,10 +386,18 @@ function getCurrentProviderBgColor() {
   return providerTypes.find(p => p.id === selectedProvider.value)?.bgColor || 'rgba(120, 113, 108, 0.1)'
 }
 
+function showNotification(message, type = 'success') {
+  const id = Date.now()
+  notifications.value.push({ id, message, type })
+  setTimeout(() => {
+    notifications.value = notifications.value.filter(n => n.id !== id)
+  }, 4000)
+}
+
 function copyWebhookUrl(suffix = '') {
   const fullUrl = webhookUrl.value + suffix
   navigator.clipboard.writeText(fullUrl)
-  alert('Webhook URL copied to clipboard!')
+  showNotification('Webhook URL copied to clipboard!', 'success')
 }
 
 async function saveConfiguration() {
@@ -436,9 +413,10 @@ async function saveConfiguration() {
         active: true
       })
     }
-    alert('Configuration saved successfully!')
+    showNotification('Configuration saved successfully!', 'success')
+    await providersStore.fetchProviders()
   } catch (error) {
-    alert('Failed to save configuration: ' + error.message)
+    showNotification('Failed to save configuration: ' + error.message, 'error')
   }
 }
 
@@ -447,12 +425,12 @@ async function testConnection() {
     const provider = providers.value.find(p => p.type === selectedProvider.value)
     if (provider) {
       const result = await api.testProvider(provider.id)
-      alert(result.message || 'Test successful!')
+      showNotification(result.message || 'Test successful!', 'success')
     } else {
-      alert('Please save configuration first')
+      showNotification('Please save configuration first', 'error')
     }
   } catch (error) {
-    alert('Test failed: ' + error.message)
+    showNotification('Test failed: ' + error.message, 'error')
   }
 }
 
