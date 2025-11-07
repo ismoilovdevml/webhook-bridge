@@ -1,5 +1,7 @@
 """Notification providers for different platforms."""
 
+from typing import Dict, Any, Type
+
 from .base import BaseProvider
 from .telegram import TelegramProvider
 from .slack import SlackProvider
@@ -8,7 +10,7 @@ from .discord import DiscordProvider
 from .email import EmailProvider
 
 # Provider registry
-PROVIDERS = {
+PROVIDERS: Dict[str, Type[BaseProvider]] = {
     "telegram": TelegramProvider,
     "slack": SlackProvider,
     "mattermost": MattermostProvider,
@@ -17,7 +19,7 @@ PROVIDERS = {
 }
 
 
-def get_provider(provider_type: str, config: dict) -> BaseProvider:
+def get_provider(provider_type: str, config: Dict[Any, Any]) -> BaseProvider:
     """
     Get provider instance by type.
 

@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List, Dict, Any, cast
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -171,7 +171,8 @@ def update_provider(
     if provider_data.config is not None:
         # Validate new config
         try:
-            get_provider(provider.type, provider_data.config)
+            provider_type = cast(str, provider.type)
+            get_provider(provider_type, provider_data.config)
         except (ValueError, ConfigurationError) as e:
             raise HTTPException(
                 status_code=400, detail=f"Invalid configuration: {str(e)}"
@@ -232,7 +233,9 @@ async def test_provider_connection(
         raise HTTPException(status_code=404, detail="Provider not found")
 
     try:
-        provider_instance = get_provider(provider.type, provider.config)
+        provider_type = cast(str, provider.type)
+        provider_config = cast(Dict[Any, Any], provider.config)
+        provider_instance = get_provider(provider_type, provider_config)
         success = await provider_instance.test_connection()
 
         return {

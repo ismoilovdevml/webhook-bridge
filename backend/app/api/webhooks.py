@@ -1,7 +1,7 @@
 """Webhook receiver API endpoints."""
 
 from fastapi import APIRouter, Request, HTTPException, BackgroundTasks, Depends
-from typing import Any, Dict
+from typing import Any, Dict, cast
 from datetime import datetime
 from sqlalchemy.orm import Session
 
@@ -10,7 +10,12 @@ from ..models.provider import Provider
 from ..models.event import Event
 from ..parsers import get_parser
 from ..providers import get_provider
-from ..formatters import HTMLFormatter, MarkdownFormatter, SlackBlocksFormatter
+from ..formatters import (
+    HTMLFormatter,
+    MarkdownFormatter,
+    SlackBlocksFormatter,
+    BaseFormatter,
+)
 from ..utils.logger import get_logger
 from ..utils.exceptions import ParserError, ProviderError, FormatterError
 
@@ -51,24 +56,25 @@ async def process_and_send(
 
     try:
         # Get formatter for provider type
-        formatter = FORMATTER_MAP.get(provider_model.type)
+        provider_type = cast(str, provider_model.type)
+        provider_config = cast(Dict[Any, Any], provider_model.config)
+
+        formatter = cast(BaseFormatter, FORMATTER_MAP.get(provider_type))
         if not formatter:
-            raise FormatterError(
-                f"No formatter for provider type: {provider_model.type}"
-            )
+            raise FormatterError(f"No formatter for provider type: {provider_type}")
 
         # Format message
         formatted_message = formatter.format(parsed_event)
 
         # Get provider instance and send
-        provider = get_provider(provider_model.type, provider_model.config)
+        provider = get_provider(provider_type, provider_config)
         success = await provider.send(formatted_message)
 
         if success:
             event_log.status = "success"
             logger.info(
                 f"Sent {parsed_event.event_type} notification to "
-                f"{provider_model.name} ({provider_model.type})"
+                f"{provider_model.name} ({provider_type})"
             )
         else:
             event_log.status = "failed"
@@ -172,7 +178,7 @@ async def receive_webhook(
 
         # Parse the event
         try:
-            parsed_event = parser.parse(payload)
+            parsed_event = parser.parse(headers, payload)
         except ParserError as e:
             logger.error(f"Failed to parse webhook: {e}")
             raise HTTPException(status_code=400, detail=f"Parse error: {str(e)}")

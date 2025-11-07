@@ -1,10 +1,12 @@
 """Custom exceptions for webhook bridge."""
 
+from typing import Optional, Dict, Any
+
 
 class WebhookBridgeError(Exception):
     """Base exception for all webhook bridge errors."""
 
-    def __init__(self, message: str, details: dict = None):
+    def __init__(self, message: str, details: Optional[Dict[Any, Any]] = None):
         self.message = message
         self.details = details or {}
         super().__init__(self.message)
