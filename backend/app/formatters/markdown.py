@@ -45,10 +45,12 @@ class MarkdownFormatter(BaseFormatter):
             mr_data = event.raw_data
             status = mr_data.get("status", "opened")
             status_emoji = self._get_status_emoji(status)
-            lines.extend([
-                f"**Status:** {status_emoji} {status.title()}",
-                f"**Title:** {mr_data.get('title', 'N/A')}",
-            ])
+            lines.extend(
+                [
+                    f"**Status:** {status_emoji} {status.title()}",
+                    f"**Title:** {mr_data.get('title', 'N/A')}",
+                ]
+            )
             if mr_data.get("source_branch") and mr_data.get("target_branch"):
                 lines.append(
                     f"**Merge:** `{mr_data['source_branch']}` → `{mr_data['target_branch']}`"
@@ -58,9 +60,11 @@ class MarkdownFormatter(BaseFormatter):
             pipeline_data = event.raw_data
             status = pipeline_data.get("status", "unknown")
             status_emoji = self._get_status_emoji(status)
-            lines.extend([
-                f"**Status:** {status_emoji} {status.upper()}",
-            ])
+            lines.extend(
+                [
+                    f"**Status:** {status_emoji} {status.upper()}",
+                ]
+            )
             if pipeline_data.get("duration"):
                 duration = pipeline_data["duration"]
                 lines.append(f"**Duration:** {duration}s")
@@ -69,18 +73,22 @@ class MarkdownFormatter(BaseFormatter):
             issue_data = event.raw_data
             status = issue_data.get("action", "opened")
             status_emoji = self._get_status_emoji(status)
-            lines.extend([
-                f"**Action:** {status_emoji} {status.title()}",
-                f"**Title:** {issue_data.get('title', 'N/A')}",
-            ])
+            lines.extend(
+                [
+                    f"**Action:** {status_emoji} {status.title()}",
+                    f"**Title:** {issue_data.get('title', 'N/A')}",
+                ]
+            )
 
         elif event.event_type in ["comment", "note"]:
             comment_data = event.raw_data
             comment_body = self._truncate(comment_data.get("body", ""), 150)
-            lines.extend([
-                f"**Comment on:** {comment_data.get('noteable_type', 'Unknown')}",
-                f"**Comment:** {comment_body}",
-            ])
+            lines.extend(
+                [
+                    f"**Comment on:** {comment_data.get('noteable_type', 'Unknown')}",
+                    f"**Comment:** {comment_body}",
+                ]
+            )
 
         # Add URL if present
         url = self._get_event_url(event)

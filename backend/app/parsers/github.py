@@ -1,4 +1,5 @@
 """GitHub webhook parser"""
+
 from typing import Dict, Any
 from app.parsers.base import BaseParser, ParsedEvent
 
@@ -25,7 +26,9 @@ class GitHubParser(BaseParser):
             return self._parse_workflow(payload)
         elif event_type == "issues":
             return self._parse_issue(payload)
-        elif event_type == "issue_comment" or event_type == "pull_request_review_comment":
+        elif (
+            event_type == "issue_comment" or event_type == "pull_request_review_comment"
+        ):
             return self._parse_comment(payload)
         elif event_type == "create" and payload.get("ref_type") == "tag":
             return self._parse_tag(payload)

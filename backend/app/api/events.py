@@ -17,6 +17,7 @@ router = APIRouter(prefix="/events")
 
 class EventResponse(BaseModel):
     """Event response schema."""
+
     id: int
     platform: str
     event_type: str
@@ -40,7 +41,7 @@ def list_events(
     event_type: str | None = None,
     status: str | None = None,
     project: str | None = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> List[Event]:
     """
     Get list of events with optional filters.
@@ -76,9 +77,7 @@ def list_events(
 
 
 @router.get("/stats")
-def get_event_stats(
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+def get_event_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
     """
     Get event statistics.
 
@@ -89,27 +88,36 @@ def get_event_stats(
         Event statistics
     """
     total_events = db.query(func.count(Event.id)).scalar()
-    success_count = db.query(func.count(Event.id)).filter(Event.status == "success").scalar()
-    failed_count = db.query(func.count(Event.id)).filter(Event.status == "failed").scalar()
+    success_count = (
+        db.query(func.count(Event.id)).filter(Event.status == "success").scalar()
+    )
+    failed_count = (
+        db.query(func.count(Event.id)).filter(Event.status == "failed").scalar()
+    )
 
     # Events by platform
-    platform_stats = db.query(
-        Event.platform,
-        func.count(Event.id).label("count")
-    ).group_by(Event.platform).all()
+    platform_stats = (
+        db.query(Event.platform, func.count(Event.id).label("count"))
+        .group_by(Event.platform)
+        .all()
+    )
 
     # Events by type
-    type_stats = db.query(
-        Event.event_type,
-        func.count(Event.id).label("count")
-    ).group_by(Event.event_type).order_by(desc("count")).limit(10).all()
+    type_stats = (
+        db.query(Event.event_type, func.count(Event.id).label("count"))
+        .group_by(Event.event_type)
+        .order_by(desc("count"))
+        .limit(10)
+        .all()
+    )
 
     # Recent activity (last 24 hours)
     from datetime import timedelta
+
     yesterday = datetime.utcnow() - timedelta(days=1)
-    recent_count = db.query(func.count(Event.id)).filter(
-        Event.created_at >= yesterday
-    ).scalar()
+    recent_count = (
+        db.query(func.count(Event.id)).filter(Event.created_at >= yesterday).scalar()
+    )
 
     success_rate = (success_count / total_events * 100) if total_events > 0 else 0
 
@@ -125,10 +133,7 @@ def get_event_stats(
 
 
 @router.get("/{event_id}", response_model=EventResponse)
-def get_event(
-    event_id: int,
-    db: Session = Depends(get_db)
-) -> Event:
+def get_event(event_id: int, db: Session = Depends(get_db)) -> Event:
     """
     Get event by ID.
 
@@ -142,15 +147,13 @@ def get_event(
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Event not found")
     return event
 
 
 @router.delete("/{event_id}")
-def delete_event(
-    event_id: int,
-    db: Session = Depends(get_db)
-) -> Dict[str, str]:
+def delete_event(event_id: int, db: Session = Depends(get_db)) -> Dict[str, str]:
     """
     Delete an event log.
 
@@ -164,6 +167,7 @@ def delete_event(
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Event not found")
 
     db.delete(event)
@@ -175,8 +179,7 @@ def delete_event(
 
 @router.delete("")
 def clear_events(
-    status: str | None = None,
-    db: Session = Depends(get_db)
+    status: str | None = None, db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Clear event logs (optionally filtered by status).
@@ -197,9 +200,7 @@ def clear_events(
     query.delete()
     db.commit()
 
-    logger.info(f"Cleared {count} events" + (f" with status '{status}'" if status else ""))
-    return {
-        "status": "success",
-        "message": f"Cleared {count} event(s)",
-        "count": count
-    }
+    logger.info(
+        f"Cleared {count} events" + (f" with status '{status}'" if status else "")
+    )
+    return {"status": "success", "message": f"Cleared {count} event(s)", "count": count}

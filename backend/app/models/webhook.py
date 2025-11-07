@@ -1,4 +1,5 @@
 """Webhook model - stores webhook configurations (optional feature)"""
+
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime
 from sqlalchemy.sql import func
 from app.database import Base

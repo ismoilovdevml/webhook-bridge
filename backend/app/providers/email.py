@@ -45,13 +45,13 @@ class EmailProvider(BaseProvider):
                 raise ProviderError("Message text is empty")
 
             # Create message
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = self.from_email
-            msg['To'] = self.to_emails
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = self.from_email
+            msg["To"] = self.to_emails
 
             # Plain text and HTML
-            part = MIMEText(text, 'plain')
+            part = MIMEText(text, "plain")
             msg.attach(part)
 
             # Send email

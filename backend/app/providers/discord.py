@@ -51,10 +51,7 @@ class DiscordProvider(BaseProvider):
                 payload["avatar_url"] = self.avatar_url
 
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    self.webhook_url,
-                    json=payload
-                )
+                response = await client.post(self.webhook_url, json=payload)
 
                 # Discord returns 204 No Content on success
                 if response.status_code in [200, 204]:
@@ -63,7 +60,10 @@ class DiscordProvider(BaseProvider):
                 else:
                     raise ProviderError(
                         f"Discord webhook returned {response.status_code}",
-                        details={"status_code": response.status_code, "body": response.text}
+                        details={
+                            "status_code": response.status_code,
+                            "body": response.text,
+                        },
                     )
 
         except httpx.RequestError as e:
@@ -73,7 +73,9 @@ class DiscordProvider(BaseProvider):
             raise
         except Exception as e:
             logger.error(f"Unexpected error sending to Discord: {e}")
-            raise ProviderError(f"Unexpected error: {str(e)}", details={"error": str(e)})
+            raise ProviderError(
+                f"Unexpected error: {str(e)}", details={"error": str(e)}
+            )
 
     def _create_embed(self, text: str, message: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -103,6 +105,7 @@ class DiscordProvider(BaseProvider):
 
         # Add timestamp
         import datetime
+
         embed["timestamp"] = datetime.datetime.utcnow().isoformat()
 
         return embed
@@ -157,10 +160,7 @@ class DiscordProvider(BaseProvider):
                 test_payload["avatar_url"] = self.avatar_url
 
             async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(
-                    self.webhook_url,
-                    json=test_payload
-                )
+                response = await client.post(self.webhook_url, json=test_payload)
 
                 if response.status_code in [200, 204]:
                     logger.info("Discord webhook test successful")

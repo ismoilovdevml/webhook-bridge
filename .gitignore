@@ -12,6 +12,7 @@ ENV/
 # Environment
 .env
 .env.local
+.env.*.local
 
 # IDE
 .vscode/
@@ -27,3 +28,37 @@ htmlcov/
 # Logs
 *.log
 logs/
+
+# Docker volumes
+postgres_data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend specific
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.vitest/
+frontend/.eslintcache
+
+# Backend specific
+backend/__pycache__/
+backend/*.py[cod]
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.mypy_cache/
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+.tmp/

@@ -22,37 +22,27 @@ class SlackBlocksFormatter(BaseFormatter):
         blocks: List[Dict[str, Any]] = []
 
         # Header block
-        blocks.append({
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": f"{emoji} {event.event_type.replace('_', ' ').title()}",
-                "emoji": True
+        blocks.append(
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": f"{emoji} {event.event_type.replace('_', ' ').title()}",
+                    "emoji": True,
+                },
             }
-        })
+        )
 
         # Main info section
         fields: List[Dict[str, Any]] = [
-            {
-                "type": "mrkdwn",
-                "text": f"*Project:*\n{event.project}"
-            },
-            {
-                "type": "mrkdwn",
-                "text": f"*Author:*\n{event.author}"
-            }
+            {"type": "mrkdwn", "text": f"*Project:*\n{event.project}"},
+            {"type": "mrkdwn", "text": f"*Author:*\n{event.author}"},
         ]
 
         if event.ref:
-            fields.append({
-                "type": "mrkdwn",
-                "text": f"*Branch:*\n`{event.ref}`"
-            })
+            fields.append({"type": "mrkdwn", "text": f"*Branch:*\n`{event.ref}`"})
 
-        blocks.append({
-            "type": "section",
-            "fields": fields
-        })
+        blocks.append({"type": "section", "fields": fields})
 
         # Event-specific sections
         if event.event_type == "push" and event.commits:
@@ -64,13 +54,12 @@ class SlackBlocksFormatter(BaseFormatter):
             if len(event.commits) > 3:
                 commit_lines.append(f"• ... and {len(event.commits) - 3} more")
 
-            blocks.append({
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "\n".join(commit_lines)
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "\n".join(commit_lines)},
                 }
-            })
+            )
 
         elif event.event_type in ["merge_request", "pull_request"]:
             mr_data = event.raw_data
@@ -80,29 +69,30 @@ class SlackBlocksFormatter(BaseFormatter):
             mr_fields: List[Dict[str, Any]] = [
                 {
                     "type": "mrkdwn",
-                    "text": f"*Status:*\n{status_emoji} {status.title()}"
+                    "text": f"*Status:*\n{status_emoji} {status.title()}",
                 }
             ]
 
             if mr_data.get("source_branch") and mr_data.get("target_branch"):
-                mr_fields.append({
-                    "type": "mrkdwn",
-                    "text": f"*Merge:*\n`{mr_data['source_branch']}` → `{mr_data['target_branch']}`"
-                })
+                mr_fields.append(
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Merge:*\n`{mr_data['source_branch']}` → `{mr_data['target_branch']}`",
+                    }
+                )
 
-            blocks.append({
-                "type": "section",
-                "fields": mr_fields
-            })
+            blocks.append({"type": "section", "fields": mr_fields})
 
             if mr_data.get("title"):
-                blocks.append({
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"*Title:*\n{mr_data['title']}"
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*Title:*\n{mr_data['title']}",
+                        },
                     }
-                })
+                )
 
         elif event.event_type in ["pipeline", "workflow_run"]:
             pipeline_data = event.raw_data
@@ -112,90 +102,93 @@ class SlackBlocksFormatter(BaseFormatter):
             pipeline_fields: List[Dict[str, Any]] = [
                 {
                     "type": "mrkdwn",
-                    "text": f"*Status:*\n{status_emoji} {status.upper()}"
+                    "text": f"*Status:*\n{status_emoji} {status.upper()}",
                 }
             ]
 
             if pipeline_data.get("duration"):
-                pipeline_fields.append({
-                    "type": "mrkdwn",
-                    "text": f"*Duration:*\n{pipeline_data['duration']}s"
-                })
+                pipeline_fields.append(
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Duration:*\n{pipeline_data['duration']}s",
+                    }
+                )
 
-            blocks.append({
-                "type": "section",
-                "fields": pipeline_fields
-            })
+            blocks.append({"type": "section", "fields": pipeline_fields})
 
             if pipeline_data.get("stages"):
                 stages_text = ", ".join(pipeline_data["stages"])
-                blocks.append({
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"*Stages:*\n{stages_text}"
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": f"*Stages:*\n{stages_text}"},
                     }
-                })
+                )
 
         elif event.event_type in ["issue", "issues"]:
             issue_data = event.raw_data
             status = issue_data.get("action", "opened")
             status_emoji = self._get_status_emoji(status)
 
-            blocks.append({
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Action:*\n{status_emoji} {status.title()}"
-                    }
-                ]
-            })
+            blocks.append(
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Action:*\n{status_emoji} {status.title()}",
+                        }
+                    ],
+                }
+            )
 
             if issue_data.get("title"):
-                blocks.append({
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"*Title:*\n{issue_data['title']}"
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*Title:*\n{issue_data['title']}",
+                        },
                     }
-                })
+                )
 
         elif event.event_type in ["comment", "note"]:
             comment_data = event.raw_data
             comment_body = self._truncate(comment_data.get("body", ""), 150)
 
-            blocks.append({
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"*Comment on:* {comment_data.get('noteable_type', 'Unknown')}\n\n{comment_body}"
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*Comment on:* {comment_data.get('noteable_type', 'Unknown')}\n\n{comment_body}",
+                    },
                 }
-            })
+            )
 
         # Add button with URL if present
         url = self._get_event_url(event)
         if url:
-            blocks.append({
-                "type": "actions",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "View Details",
-                            "emoji": True
-                        },
-                        "url": url,
-                        "style": "primary"
-                    }
-                ]
-            })
+            blocks.append(
+                {
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "View Details",
+                                "emoji": True,
+                            },
+                            "url": url,
+                            "style": "primary",
+                        }
+                    ],
+                }
+            )
 
         # Fallback text for notifications
         fallback_text = f"{emoji} {event.event_type.replace('_', ' ').title()} in {event.project} by {event.author}"
 
-        return {
-            "blocks": blocks,
-            "text": fallback_text  # Fallback for notifications
-        }
+        return {"blocks": blocks, "text": fallback_text}  # Fallback for notifications

@@ -54,10 +54,7 @@ class SlackProvider(BaseProvider):
                 raise ProviderError("Message must contain 'blocks' or 'text'")
 
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    self.webhook_url,
-                    json=payload
-                )
+                response = await client.post(self.webhook_url, json=payload)
 
                 if response.status_code == 200:
                     if response.text == "ok":
@@ -66,12 +63,15 @@ class SlackProvider(BaseProvider):
                     else:
                         raise ProviderError(
                             f"Slack returned unexpected response: {response.text}",
-                            details={"response": response.text}
+                            details={"response": response.text},
                         )
                 else:
                     raise ProviderError(
                         f"Slack webhook returned {response.status_code}",
-                        details={"status_code": response.status_code, "body": response.text}
+                        details={
+                            "status_code": response.status_code,
+                            "body": response.text,
+                        },
                     )
 
         except httpx.RequestError as e:
@@ -81,7 +81,9 @@ class SlackProvider(BaseProvider):
             raise
         except Exception as e:
             logger.error(f"Unexpected error sending to Slack: {e}")
-            raise ProviderError(f"Unexpected error: {str(e)}", details={"error": str(e)})
+            raise ProviderError(
+                f"Unexpected error: {str(e)}", details={"error": str(e)}
+            )
 
     async def test_connection(self) -> bool:
         """
@@ -98,10 +100,7 @@ class SlackProvider(BaseProvider):
             }
 
             async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(
-                    self.webhook_url,
-                    json=test_payload
-                )
+                response = await client.post(self.webhook_url, json=test_payload)
 
                 if response.status_code == 200 and response.text == "ok":
                     logger.info("Slack webhook test successful")

@@ -28,9 +28,7 @@ FORMATTER_MAP = {
 
 
 async def process_and_send(
-    parsed_event: Any,
-    provider_model: Provider,
-    db: Session
+    parsed_event: Any, provider_model: Provider, db: Session
 ) -> None:
     """
     Process and send notification to a provider.
@@ -48,14 +46,16 @@ async def process_and_send(
         branch=parsed_event.branch,
         provider_id=provider_model.id,
         status="pending",
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
     try:
         # Get formatter for provider type
         formatter = FORMATTER_MAP.get(provider_model.type)
         if not formatter:
-            raise FormatterError(f"No formatter for provider type: {provider_model.type}")
+            raise FormatterError(
+                f"No formatter for provider type: {provider_model.type}"
+            )
 
         # Format message
         formatted_message = formatter.format(parsed_event)
@@ -132,12 +132,12 @@ async def process_and_send(
                             "platform": "gitlab",
                             "type": "push",
                             "project": "myorg/myproject",
-                            "author": "john.doe"
+                            "author": "john.doe",
                         },
-                        "providers": 2
+                        "providers": 2,
                     }
                 }
-            }
+            },
         },
         400: {
             "description": "Invalid webhook payload or unknown platform",
@@ -147,14 +147,12 @@ async def process_and_send(
                         "detail": "Unknown webhook platform. Check your headers."
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def receive_webhook(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Receive and process webhooks from Git platforms."""
     try:
@@ -196,7 +194,7 @@ async def receive_webhook(
                     "platform": parsed_event.platform,
                     "type": parsed_event.event_type,
                     "project": parsed_event.project,
-                }
+                },
             }
 
         # Send to all active providers (in background)
@@ -212,7 +210,7 @@ async def receive_webhook(
                 "project": parsed_event.project,
                 "author": parsed_event.author,
             },
-            "providers": len(active_providers)
+            "providers": len(active_providers),
         }
 
     except HTTPException:
@@ -234,17 +232,13 @@ async def receive_webhook(
                     "example": {
                         "status": "ok",
                         "message": "Webhook service is running",
-                        "version": "1.0.0"
+                        "version": "1.0.0",
                     }
                 }
-            }
+            },
         }
-    }
+    },
 )
 async def test_webhook() -> Dict[str, str]:
     """Test endpoint to verify webhook service is running."""
-    return {
-        "status": "ok",
-        "message": "Webhook service is running",
-        "version": "1.0.0"
-    }
+    return {"status": "ok", "message": "Webhook service is running", "version": "1.0.0"}

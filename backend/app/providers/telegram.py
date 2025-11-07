@@ -54,8 +54,7 @@ class TelegramProvider(BaseProvider):
 
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
-                    f"{self.api_url}/sendMessage",
-                    json=payload
+                    f"{self.api_url}/sendMessage", json=payload
                 )
 
                 if response.status_code == 200:
@@ -67,12 +66,15 @@ class TelegramProvider(BaseProvider):
                         error_msg = data.get("description", "Unknown error")
                         raise ProviderError(
                             f"Telegram API error: {error_msg}",
-                            details={"response": data}
+                            details={"response": data},
                         )
                 else:
                     raise ProviderError(
                         f"Telegram API returned {response.status_code}",
-                        details={"status_code": response.status_code, "body": response.text}
+                        details={
+                            "status_code": response.status_code,
+                            "body": response.text,
+                        },
                     )
 
         except httpx.RequestError as e:
@@ -82,7 +84,9 @@ class TelegramProvider(BaseProvider):
             raise
         except Exception as e:
             logger.error(f"Unexpected error sending to Telegram: {e}")
-            raise ProviderError(f"Unexpected error: {str(e)}", details={"error": str(e)})
+            raise ProviderError(
+                f"Unexpected error: {str(e)}", details={"error": str(e)}
+            )
 
     async def test_connection(self) -> bool:
         """
@@ -99,7 +103,9 @@ class TelegramProvider(BaseProvider):
                     data = response.json()
                     if data.get("ok"):
                         bot_info = data.get("result", {})
-                        logger.info(f"Telegram bot connected: @{bot_info.get('username', 'unknown')}")
+                        logger.info(
+                            f"Telegram bot connected: @{bot_info.get('username', 'unknown')}"
+                        )
                         return True
 
                 logger.error(f"Telegram test failed: {response.text}")

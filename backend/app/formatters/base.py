@@ -91,7 +91,7 @@ class BaseFormatter(ABC):
             return ""
         if len(text) <= max_length:
             return text
-        return text[:max_length - 3] + "..."
+        return text[: max_length - 3] + "..."
 
     def _get_event_url(self, event: ParsedEvent) -> Optional[str]:
         """
@@ -107,7 +107,10 @@ class BaseFormatter(ABC):
             return event.mr_url
         elif event.event_type in ["issue", "issues"] and event.issue_url:
             return event.issue_url
-        elif event.event_type in ["pipeline", "workflow_run", "check_run"] and event.pipeline_url:
+        elif (
+            event.event_type in ["pipeline", "workflow_run", "check_run"]
+            and event.pipeline_url
+        ):
             return event.pipeline_url
         elif event.comment_url:
             return event.comment_url

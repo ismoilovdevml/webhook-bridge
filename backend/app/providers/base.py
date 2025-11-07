@@ -78,7 +78,7 @@ class BaseProvider(ABC):
         if not value:
             raise ConfigurationError(
                 f"Missing required field: {field}",
-                details={"provider": self.__class__.__name__, "field": field}
+                details={"provider": self.__class__.__name__, "field": field},
             )
         return value
 

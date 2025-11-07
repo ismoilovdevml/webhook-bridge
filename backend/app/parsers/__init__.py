@@ -1,4 +1,5 @@
 """Git platform parsers"""
+
 from typing import Dict, Any
 from app.parsers.base import BaseParser, ParsedEvent
 from app.parsers.gitlab import GitLabParser
@@ -36,4 +37,11 @@ def get_parser(headers: Dict[str, Any]) -> BaseParser:
         )
 
 
-__all__ = ["BaseParser", "ParsedEvent", "GitLabParser", "GitHubParser", "BitbucketParser", "get_parser"]
+__all__ = [
+    "BaseParser",
+    "ParsedEvent",
+    "GitLabParser",
+    "GitHubParser",
+    "BitbucketParser",
+    "get_parser",
+]

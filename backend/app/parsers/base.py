@@ -1,4 +1,5 @@
 """Base parser for Git webhooks"""
+
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel
 from abc import ABC, abstractmethod

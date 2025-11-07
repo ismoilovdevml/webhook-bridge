@@ -47,10 +47,12 @@ class HTMLFormatter(BaseFormatter):
             status = mr_data.get("status", "opened")
             status_emoji = self._get_status_emoji(status)
             title = self._escape_html(mr_data.get("title", "N/A"))
-            lines.extend([
-                f"<b>Status:</b> {status_emoji} {status.title()}",
-                f"<b>Title:</b> {title}",
-            ])
+            lines.extend(
+                [
+                    f"<b>Status:</b> {status_emoji} {status.title()}",
+                    f"<b>Title:</b> {title}",
+                ]
+            )
             if mr_data.get("source_branch") and mr_data.get("target_branch"):
                 src = self._escape_html(mr_data["source_branch"])
                 tgt = self._escape_html(mr_data["target_branch"])
@@ -60,9 +62,11 @@ class HTMLFormatter(BaseFormatter):
             pipeline_data = event.raw_data
             status = pipeline_data.get("status", "unknown")
             status_emoji = self._get_status_emoji(status)
-            lines.extend([
-                f"<b>Status:</b> {status_emoji} {status.upper()}",
-            ])
+            lines.extend(
+                [
+                    f"<b>Status:</b> {status_emoji} {status.upper()}",
+                ]
+            )
             if pipeline_data.get("duration"):
                 duration = pipeline_data["duration"]
                 lines.append(f"<b>Duration:</b> {duration}s")
@@ -75,40 +79,45 @@ class HTMLFormatter(BaseFormatter):
             status = issue_data.get("action", "opened")
             status_emoji = self._get_status_emoji(status)
             title = self._escape_html(issue_data.get("title", "N/A"))
-            lines.extend([
-                f"<b>Action:</b> {status_emoji} {status.title()}",
-                f"<b>Title:</b> {title}",
-            ])
+            lines.extend(
+                [
+                    f"<b>Action:</b> {status_emoji} {status.title()}",
+                    f"<b>Title:</b> {title}",
+                ]
+            )
 
         elif event.event_type in ["comment", "note"]:
             comment_data = event.raw_data
             comment_body = self._escape_html(
                 self._truncate(comment_data.get("body", ""), 150)
             )
-            noteable_type = self._escape_html(comment_data.get("noteable_type", "Unknown"))
-            lines.extend([
-                f"<b>Comment on:</b> {noteable_type}",
-                f"<b>Comment:</b> {comment_body}",
-            ])
+            noteable_type = self._escape_html(
+                comment_data.get("noteable_type", "Unknown")
+            )
+            lines.extend(
+                [
+                    f"<b>Comment on:</b> {noteable_type}",
+                    f"<b>Comment:</b> {comment_body}",
+                ]
+            )
 
         elif event.event_type == "release":
             release_data = event.raw_data
             tag = self._escape_html(release_data.get("tag", "N/A"))
             name = self._escape_html(release_data.get("name", "N/A"))
-            lines.extend([
-                f"<b>Tag:</b> <code>{tag}</code>",
-                f"<b>Name:</b> {name}",
-            ])
+            lines.extend(
+                [
+                    f"<b>Tag:</b> <code>{tag}</code>",
+                    f"<b>Name:</b> {name}",
+                ]
+            )
 
         # Add URL as link if present
         url = self._get_event_url(event)
         if url:
-            lines.extend(["", f"<a href=\"{url}\">View Details</a>"])
+            lines.extend(["", f'<a href="{url}">View Details</a>'])
 
-        return {
-            "text": "\n".join(lines),
-            "parse_mode": "HTML"
-        }
+        return {"text": "\n".join(lines), "parse_mode": "HTML"}
 
     def _escape_html(self, text: str) -> str:
         """

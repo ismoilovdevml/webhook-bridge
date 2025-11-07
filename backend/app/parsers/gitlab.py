@@ -1,4 +1,5 @@
 """GitLab webhook parser"""
+
 from typing import Dict, Any
 from app.parsers.base import BaseParser, ParsedEvent
 

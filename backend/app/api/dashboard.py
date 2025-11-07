@@ -16,9 +16,7 @@ router = APIRouter(prefix="/dashboard")
 
 
 @router.get("/stats")
-def get_dashboard_stats(
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+def get_dashboard_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
     """
     Get dashboard statistics.
 
@@ -30,18 +28,18 @@ def get_dashboard_stats(
     """
     # Provider stats
     total_providers = db.query(func.count(Provider.id)).scalar()
-    active_providers = db.query(func.count(Provider.id)).filter(
-        Provider.active == True
-    ).scalar()
+    active_providers = (
+        db.query(func.count(Provider.id)).filter(Provider.active == True).scalar()
+    )
 
     # Event stats
     total_events = db.query(func.count(Event.id)).scalar()
-    success_events = db.query(func.count(Event.id)).filter(
-        Event.status == "success"
-    ).scalar()
-    failed_events = db.query(func.count(Event.id)).filter(
-        Event.status == "failed"
-    ).scalar()
+    success_events = (
+        db.query(func.count(Event.id)).filter(Event.status == "success").scalar()
+    )
+    failed_events = (
+        db.query(func.count(Event.id)).filter(Event.status == "failed").scalar()
+    )
 
     # Calculate success rate
     success_rate = (success_events / total_events * 100) if total_events > 0 else 0
@@ -52,37 +50,42 @@ def get_dashboard_stats(
     last_7d = now - timedelta(days=7)
     last_30d = now - timedelta(days=30)
 
-    events_24h = db.query(func.count(Event.id)).filter(
-        Event.created_at >= last_24h
-    ).scalar()
+    events_24h = (
+        db.query(func.count(Event.id)).filter(Event.created_at >= last_24h).scalar()
+    )
 
-    events_7d = db.query(func.count(Event.id)).filter(
-        Event.created_at >= last_7d
-    ).scalar()
+    events_7d = (
+        db.query(func.count(Event.id)).filter(Event.created_at >= last_7d).scalar()
+    )
 
-    events_30d = db.query(func.count(Event.id)).filter(
-        Event.created_at >= last_30d
-    ).scalar()
+    events_30d = (
+        db.query(func.count(Event.id)).filter(Event.created_at >= last_30d).scalar()
+    )
 
     # Platform distribution
-    platform_stats = db.query(
-        Event.platform,
-        func.count(Event.id).label("count")
-    ).group_by(Event.platform).all()
+    platform_stats = (
+        db.query(Event.platform, func.count(Event.id).label("count"))
+        .group_by(Event.platform)
+        .all()
+    )
 
     # Event type distribution (top 10)
-    type_stats = db.query(
-        Event.event_type,
-        func.count(Event.id).label("count")
-    ).group_by(Event.event_type).order_by(desc("count")).limit(10).all()
+    type_stats = (
+        db.query(Event.event_type, func.count(Event.id).label("count"))
+        .group_by(Event.event_type)
+        .order_by(desc("count"))
+        .limit(10)
+        .all()
+    )
 
     # Provider distribution
-    provider_stats = db.query(
-        Provider.name,
-        func.count(Event.id).label("event_count")
-    ).join(Event, Provider.id == Event.provider_id).group_by(
-        Provider.name
-    ).order_by(desc("event_count")).all()
+    provider_stats = (
+        db.query(Provider.name, func.count(Event.id).label("event_count"))
+        .join(Event, Provider.id == Event.provider_id)
+        .group_by(Provider.name)
+        .order_by(desc("event_count"))
+        .all()
+    )
 
     return {
         "providers": {
@@ -103,14 +106,13 @@ def get_dashboard_stats(
             "by_platform": {item.platform: item.count for item in platform_stats},
             "by_type": {item.event_type: item.count for item in type_stats},
             "by_provider": {item.name: item.event_count for item in provider_stats},
-        }
+        },
     }
 
 
 @router.get("/recent-events")
 def get_recent_events(
-    limit: int = 10,
-    db: Session = Depends(get_db)
+    limit: int = 10, db: Session = Depends(get_db)
 ) -> List[Dict[str, Any]]:
     """
     Get recent events for dashboard display.
@@ -122,32 +124,37 @@ def get_recent_events(
     Returns:
         List of recent events with provider info
     """
-    events = db.query(Event).join(
-        Provider, Event.provider_id == Provider.id
-    ).order_by(desc(Event.created_at)).limit(limit).all()
+    events = (
+        db.query(Event)
+        .join(Provider, Event.provider_id == Provider.id)
+        .order_by(desc(Event.created_at))
+        .limit(limit)
+        .all()
+    )
 
     result = []
     for event in events:
         provider = db.query(Provider).filter(Provider.id == event.provider_id).first()
-        result.append({
-            "id": event.id,
-            "platform": event.platform,
-            "event_type": event.event_type,
-            "project": event.project,
-            "author": event.author,
-            "status": event.status,
-            "provider_name": provider.name if provider else "Unknown",
-            "provider_type": provider.type if provider else "Unknown",
-            "created_at": event.created_at.isoformat(),
-        })
+        result.append(
+            {
+                "id": event.id,
+                "platform": event.platform,
+                "event_type": event.event_type,
+                "project": event.project,
+                "author": event.author,
+                "status": event.status,
+                "provider_name": provider.name if provider else "Unknown",
+                "provider_type": provider.type if provider else "Unknown",
+                "created_at": event.created_at.isoformat(),
+            }
+        )
 
     return result
 
 
 @router.get("/activity-timeline")
 def get_activity_timeline(
-    days: int = 7,
-    db: Session = Depends(get_db)
+    days: int = 7, db: Session = Depends(get_db)
 ) -> List[Dict[str, Any]]:
     """
     Get activity timeline for the last N days.
@@ -162,23 +169,31 @@ def get_activity_timeline(
     start_date = datetime.utcnow() - timedelta(days=days)
 
     # Query events grouped by date
-    daily_stats = db.query(
-        func.date(Event.created_at).label("date"),
-        func.count(Event.id).label("total"),
-        func.sum(func.case((Event.status == "success", 1), else_=0)).label("success"),
-        func.sum(func.case((Event.status == "failed", 1), else_=0)).label("failed"),
-    ).filter(Event.created_at >= start_date).group_by(
-        func.date(Event.created_at)
-    ).order_by("date").all()
+    daily_stats = (
+        db.query(
+            func.date(Event.created_at).label("date"),
+            func.count(Event.id).label("total"),
+            func.sum(func.case((Event.status == "success", 1), else_=0)).label(
+                "success"
+            ),
+            func.sum(func.case((Event.status == "failed", 1), else_=0)).label("failed"),
+        )
+        .filter(Event.created_at >= start_date)
+        .group_by(func.date(Event.created_at))
+        .order_by("date")
+        .all()
+    )
 
     result = []
     for stat in daily_stats:
-        result.append({
-            "date": stat.date.isoformat() if stat.date else None,
-            "total": stat.total or 0,
-            "success": stat.success or 0,
-            "failed": stat.failed or 0,
-        })
+        result.append(
+            {
+                "date": stat.date.isoformat() if stat.date else None,
+                "total": stat.total or 0,
+                "success": stat.success or 0,
+                "failed": stat.failed or 0,
+            }
+        )
 
     return result
 

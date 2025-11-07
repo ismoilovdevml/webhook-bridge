@@ -50,10 +50,7 @@ class MattermostProvider(BaseProvider):
                 payload["icon_url"] = self.icon_url
 
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    self.webhook_url,
-                    json=payload
-                )
+                response = await client.post(self.webhook_url, json=payload)
 
                 if response.status_code == 200:
                     logger.info("Successfully sent message to Mattermost")
@@ -61,7 +58,10 @@ class MattermostProvider(BaseProvider):
                 else:
                     raise ProviderError(
                         f"Mattermost webhook returned {response.status_code}",
-                        details={"status_code": response.status_code, "body": response.text}
+                        details={
+                            "status_code": response.status_code,
+                            "body": response.text,
+                        },
                     )
 
         except httpx.RequestError as e:
@@ -71,7 +71,9 @@ class MattermostProvider(BaseProvider):
             raise
         except Exception as e:
             logger.error(f"Unexpected error sending to Mattermost: {e}")
-            raise ProviderError(f"Unexpected error: {str(e)}", details={"error": str(e)})
+            raise ProviderError(
+                f"Unexpected error: {str(e)}", details={"error": str(e)}
+            )
 
     async def test_connection(self) -> bool:
         """
@@ -90,10 +92,7 @@ class MattermostProvider(BaseProvider):
                 test_payload["icon_url"] = self.icon_url
 
             async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(
-                    self.webhook_url,
-                    json=test_payload
-                )
+                response = await client.post(self.webhook_url, json=test_payload)
 
                 if response.status_code == 200:
                     logger.info("Mattermost webhook test successful")

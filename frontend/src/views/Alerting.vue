@@ -79,8 +79,8 @@
         <!-- GitLab -->
         <div class="platform-card gitlab-card">
           <div class="platform-card-header">
-            <div class="platform-icon-large" style="background: linear-gradient(135deg, #fc6d26 0%, #e24329 100%);">
-              <GitLabIcon :size="24" />
+            <div class="platform-icon-large" style="background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);">
+              <GitLabIcon :size="36" />
             </div>
             <div class="platform-card-info">
               <h3 class="platform-card-title">GitLab</h3>
@@ -103,7 +103,7 @@
         <div class="platform-card github-card">
           <div class="platform-card-header">
             <div class="platform-icon-large" style="background: linear-gradient(135deg, #333 0%, #24292f 100%);">
-              <GitHubIcon :size="24" />
+              <GitHubIcon :size="36" />
             </div>
             <div class="platform-card-info">
               <h3 class="platform-card-title">GitHub</h3>
@@ -126,7 +126,7 @@
         <div class="platform-card bitbucket-card">
           <div class="platform-card-header">
             <div class="platform-icon-large" style="background: linear-gradient(135deg, #2684FF 0%, #0052CC 100%);">
-              <BitbucketIcon :size="24" />
+              <BitbucketIcon :size="36" />
             </div>
             <div class="platform-card-info">
               <h3 class="platform-card-title">Bitbucket</h3>
@@ -155,16 +155,13 @@
           v-for="type in providerTypes"
           :key="type.id"
           class="provider-tab"
-          :class="{ active: selectedProvider === type.id }"
+          :class="{ active: selectedProvider === type.id, enabled: getProviderStatus(type.id) === 'Enabled' }"
           @click="selectedProvider = type.id"
         >
           <div class="provider-icon-small" :style="{ background: type.bgColor, color: type.color }">
-            <component :is="type.icon" :size="20" />
+            <component :is="type.icon" :size="24" />
           </div>
-          <span>{{ type.name }}</span>
-          <span class="provider-badge" :class="{ enabled: getProviderStatus(type.id) === 'Enabled' }">
-            {{ getProviderStatus(type.id) === 'Enabled' ? '●' : '○' }}
-          </span>
+          <span class="provider-tab-name">{{ type.name }}</span>
         </button>
       </div>
 
@@ -269,55 +266,42 @@
 
     <!-- History Tab -->
     <div v-if="currentTab === 'history'">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon primary">
-            <span>📊</span>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Total Alerts</div>
-            <div class="stat-value">{{ stats?.total || 0 }}</div>
+      <div class="stats-grid-compact">
+        <div class="stat-card-compact">
+          <div class="stat-icon-compact">📊</div>
+          <div class="stat-content-compact">
+            <div class="stat-label-compact">Total</div>
+            <div class="stat-value-compact">{{ stats?.total || 0 }}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon success">
-            <span>📈</span>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Success Rate</div>
-            <div class="stat-value">{{ stats?.success_rate || 0 }}%</div>
+        <div class="stat-card-compact stat-success">
+          <div class="stat-icon-compact">✅</div>
+          <div class="stat-content-compact">
+            <div class="stat-label-compact">Successful</div>
+            <div class="stat-value-compact">{{ stats?.success || 0 }}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon success">
-            <span>✅</span>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Successful</div>
-            <div class="stat-value">{{ stats?.success || 0 }}</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon danger">
-            <span>❌</span>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Failed</div>
-            <div class="stat-value">{{ stats?.failed || 0 }}</div>
+        <div class="stat-card-compact stat-danger">
+          <div class="stat-icon-compact">❌</div>
+          <div class="stat-content-compact">
+            <div class="stat-label-compact">Failed</div>
+            <div class="stat-value-compact">{{ stats?.failed || 0 }}</div>
           </div>
         </div>
       </div>
 
-      <div class="toolbar">
+      <div class="toolbar-compact">
         <div class="search-box">
           <span class="search-icon">🔍</span>
           <input v-model="searchQuery" class="form-input" placeholder="Search by project name...">
         </div>
-        <button class="btn btn-secondary">🔍 Filters</button>
-        <button class="btn btn-success" @click="refresh">🔄 Refresh</button>
-        <button class="btn btn-success">📥 CSV</button>
-        <button class="btn btn-primary">📥 JSON</button>
-        <button class="btn btn-danger" @click="clearAll">🗑️ Clear All</button>
+        <button class="btn btn-secondary" @click="refresh">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          <span>Refresh</span>
+        </button>
       </div>
 
       <div v-if="events.length === 0" class="empty-state">

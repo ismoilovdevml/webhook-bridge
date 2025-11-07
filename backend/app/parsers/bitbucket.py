@@ -1,4 +1,5 @@
 """Bitbucket webhook parser"""
+
 from typing import Dict, Any
 from app.parsers.base import BaseParser, ParsedEvent
 
@@ -8,7 +9,11 @@ class BitbucketParser(BaseParser):
 
     def can_parse(self, headers: Dict[str, str], payload: Dict[str, Any]) -> bool:
         """Check if this is a Bitbucket webhook"""
-        return "x-event-key" in headers or "repository" in payload and "uuid" in payload.get("repository", {})
+        return (
+            "x-event-key" in headers
+            or "repository" in payload
+            and "uuid" in payload.get("repository", {})
+        )
 
     def parse(self, headers: Dict[str, str], payload: Dict[str, Any]) -> ParsedEvent:
         """Parse Bitbucket webhook payload"""
@@ -34,7 +39,11 @@ class BitbucketParser(BaseParser):
 
         # Get first change for basic info
         first_change = changes[0] if changes else {}
-        ref = first_change.get("new", {}).get("name", "") if first_change.get("new") else ""
+        ref = (
+            first_change.get("new", {}).get("name", "")
+            if first_change.get("new")
+            else ""
+        )
 
         commits = []
         for change in changes:
@@ -55,7 +64,9 @@ class BitbucketParser(BaseParser):
             raw_data=payload,
         )
 
-    def _parse_pull_request(self, payload: Dict[str, Any], event_key: str) -> ParsedEvent:
+    def _parse_pull_request(
+        self, payload: Dict[str, Any], event_key: str
+    ) -> ParsedEvent:
         """Parse pull request event"""
         repository = payload.get("repository", {})
         actor = payload.get("actor", {})

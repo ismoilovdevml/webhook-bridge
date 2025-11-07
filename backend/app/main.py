@@ -44,28 +44,13 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_tags=[
-        {
-            "name": "health",
-            "description": "Health check and system status"
-        },
-        {
-            "name": "webhooks",
-            "description": "Webhook receiver for Git platforms"
-        },
-        {
-            "name": "providers",
-            "description": "Notification providers management"
-        },
-        {
-            "name": "events",
-            "description": "Webhook events history"
-        },
-        {
-            "name": "dashboard",
-            "description": "Statistics and analytics"
-        }
+        {"name": "health", "description": "Health check and system status"},
+        {"name": "webhooks", "description": "Webhook receiver for Git platforms"},
+        {"name": "providers", "description": "Notification providers management"},
+        {"name": "events", "description": "Webhook events history"},
+        {"name": "dashboard", "description": "Statistics and analytics"},
     ],
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS middleware
@@ -85,7 +70,7 @@ app.include_router(api_router)
     "/",
     tags=["health"],
     summary="Root endpoint",
-    description="Get basic information about the Webhook Bridge API"
+    description="Get basic information about the Webhook Bridge API",
 )
 def root():
     """Root endpoint with API information."""
@@ -96,15 +81,15 @@ def root():
         "documentation": {
             "swagger": "/docs",
             "redoc": "/redoc",
-            "openapi": "/openapi.json"
+            "openapi": "/openapi.json",
         },
         "endpoints": {
             "health": "/health",
             "webhook": "/api/webhook/git",
             "providers": "/api/providers",
             "events": "/api/events",
-            "dashboard": "/api/dashboard"
-        }
+            "dashboard": "/api/dashboard",
+        },
     }
 
 
@@ -121,20 +106,16 @@ def root():
                     "example": {
                         "status": "healthy",
                         "service": "webhook-bridge",
-                        "version": "1.0.0"
+                        "version": "1.0.0",
                     }
                 }
-            }
+            },
         }
-    }
+    },
 )
 def health_check():
     """Health check endpoint for monitoring and load balancers."""
-    return {
-        "status": "healthy",
-        "service": "webhook-bridge",
-        "version": "1.0.0"
-    }
+    return {"status": "healthy", "service": "webhook-bridge", "version": "1.0.0"}
 
 
 if __name__ == "__main__":
@@ -145,5 +126,5 @@ if __name__ == "__main__":
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.ENVIRONMENT == "development",
-        log_level=settings.LOG_LEVEL.lower()
+        log_level=settings.LOG_LEVEL.lower(),
     )

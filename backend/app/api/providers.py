@@ -19,6 +19,7 @@ router = APIRouter(prefix="/providers")
 # Pydantic models for request/response
 class ProviderCreate(BaseModel):
     """Provider creation schema."""
+
     name: str
     type: str
     config: Dict[str, Any]
@@ -27,6 +28,7 @@ class ProviderCreate(BaseModel):
 
 class ProviderUpdate(BaseModel):
     """Provider update schema."""
+
     name: str | None = None
     config: Dict[str, Any] | None = None
     active: bool | None = None
@@ -34,6 +36,7 @@ class ProviderUpdate(BaseModel):
 
 class ProviderResponse(BaseModel):
     """Provider response schema."""
+
     id: int
     name: str
     type: str
@@ -47,9 +50,7 @@ class ProviderResponse(BaseModel):
 
 @router.get("", response_model=List[ProviderResponse])
 def list_providers(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db)
+    skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 ) -> List[Provider]:
     """
     Get list of all providers.
@@ -67,10 +68,7 @@ def list_providers(
 
 
 @router.get("/{provider_id}", response_model=ProviderResponse)
-def get_provider_by_id(
-    provider_id: int,
-    db: Session = Depends(get_db)
-) -> Provider:
+def get_provider_by_id(provider_id: int, db: Session = Depends(get_db)) -> Provider:
     """
     Get provider by ID.
 
@@ -89,8 +87,7 @@ def get_provider_by_id(
 
 @router.post("", response_model=ProviderResponse, status_code=201)
 def create_provider(
-    provider_data: ProviderCreate,
-    db: Session = Depends(get_db)
+    provider_data: ProviderCreate, db: Session = Depends(get_db)
 ) -> Provider:
     """
     Create a new provider.
@@ -106,12 +103,17 @@ def create_provider(
     try:
         provider_instance = get_provider(provider_data.type, provider_data.config)
     except (ValueError, ConfigurationError) as e:
-        raise HTTPException(status_code=400, detail=f"Invalid provider configuration: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid provider configuration: {str(e)}"
+        )
 
     # Check if name already exists
     existing = db.query(Provider).filter(Provider.name == provider_data.name).first()
     if existing:
-        raise HTTPException(status_code=400, detail=f"Provider with name '{provider_data.name}' already exists")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Provider with name '{provider_data.name}' already exists",
+        )
 
     # Create provider
     provider = Provider(
@@ -120,7 +122,7 @@ def create_provider(
         config=provider_data.config,
         active=provider_data.active,
         created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        updated_at=datetime.utcnow(),
     )
 
     db.add(provider)
@@ -133,9 +135,7 @@ def create_provider(
 
 @router.put("/{provider_id}", response_model=ProviderResponse)
 def update_provider(
-    provider_id: int,
-    provider_data: ProviderUpdate,
-    db: Session = Depends(get_db)
+    provider_id: int, provider_data: ProviderUpdate, db: Session = Depends(get_db)
 ) -> Provider:
     """
     Update an existing provider.
@@ -155,14 +155,15 @@ def update_provider(
     # Update fields if provided
     if provider_data.name is not None:
         # Check if new name conflicts with existing
-        existing = db.query(Provider).filter(
-            Provider.name == provider_data.name,
-            Provider.id != provider_id
-        ).first()
+        existing = (
+            db.query(Provider)
+            .filter(Provider.name == provider_data.name, Provider.id != provider_id)
+            .first()
+        )
         if existing:
             raise HTTPException(
                 status_code=400,
-                detail=f"Provider with name '{provider_data.name}' already exists"
+                detail=f"Provider with name '{provider_data.name}' already exists",
             )
         provider.name = provider_data.name
 
@@ -171,7 +172,9 @@ def update_provider(
         try:
             get_provider(provider.type, provider_data.config)
         except (ValueError, ConfigurationError) as e:
-            raise HTTPException(status_code=400, detail=f"Invalid configuration: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail=f"Invalid configuration: {str(e)}"
+            )
         provider.config = provider_data.config
 
     if provider_data.active is not None:
@@ -187,10 +190,7 @@ def update_provider(
 
 
 @router.delete("/{provider_id}")
-def delete_provider(
-    provider_id: int,
-    db: Session = Depends(get_db)
-) -> Dict[str, str]:
+def delete_provider(provider_id: int, db: Session = Depends(get_db)) -> Dict[str, str]:
     """
     Delete a provider.
 
@@ -214,8 +214,7 @@ def delete_provider(
 
 @router.post("/{provider_id}/test")
 async def test_provider_connection(
-    provider_id: int,
-    db: Session = Depends(get_db)
+    provider_id: int, db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Test provider connection.
@@ -239,7 +238,9 @@ async def test_provider_connection(
             "status": "success" if success else "failed",
             "provider": provider.name,
             "type": provider.type,
-            "message": "Connection test successful" if success else "Connection test failed"
+            "message": (
+                "Connection test successful" if success else "Connection test failed"
+            ),
         }
 
     except Exception as e:
@@ -248,5 +249,5 @@ async def test_provider_connection(
             "status": "error",
             "provider": provider.name,
             "type": provider.type,
-            "message": f"Test error: {str(e)}"
+            "message": f"Test error: {str(e)}",
         }
