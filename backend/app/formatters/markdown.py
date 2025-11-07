@@ -29,8 +29,8 @@ class MarkdownFormatter(BaseFormatter):
         ]
 
         # Add branch if present
-        if event.branch:
-            lines.append(f"**Branch:** `{event.branch}`")
+        if event.ref:
+            lines.append(f"**Branch:** `{event.ref}`")
 
         # Add specific event data
         if event.event_type == "push" and event.commits:
@@ -42,7 +42,7 @@ class MarkdownFormatter(BaseFormatter):
                 lines.append(f"- ... and {len(event.commits) - 3} more")
 
         elif event.event_type in ["merge_request", "pull_request"]:
-            mr_data = event.data
+            mr_data = event.raw_data
             status = mr_data.get("status", "opened")
             status_emoji = self._get_status_emoji(status)
             lines.extend([
@@ -55,7 +55,7 @@ class MarkdownFormatter(BaseFormatter):
                 )
 
         elif event.event_type in ["pipeline", "workflow_run"]:
-            pipeline_data = event.data
+            pipeline_data = event.raw_data
             status = pipeline_data.get("status", "unknown")
             status_emoji = self._get_status_emoji(status)
             lines.extend([
@@ -66,7 +66,7 @@ class MarkdownFormatter(BaseFormatter):
                 lines.append(f"**Duration:** {duration}s")
 
         elif event.event_type in ["issue", "issues"]:
-            issue_data = event.data
+            issue_data = event.raw_data
             status = issue_data.get("action", "opened")
             status_emoji = self._get_status_emoji(status)
             lines.extend([
@@ -75,7 +75,7 @@ class MarkdownFormatter(BaseFormatter):
             ])
 
         elif event.event_type in ["comment", "note"]:
-            comment_data = event.data
+            comment_data = event.raw_data
             comment_body = self._truncate(comment_data.get("body", ""), 150)
             lines.extend([
                 f"**Comment on:** {comment_data.get('noteable_type', 'Unknown')}",
@@ -83,7 +83,8 @@ class MarkdownFormatter(BaseFormatter):
             ])
 
         # Add URL if present
-        if event.url:
-            lines.extend(["", f"[View Details]({event.url})"])
+        url = self._get_event_url(event)
+        if url:
+            lines.extend(["", f"[View Details]({url})"])
 
         return {"text": "\n".join(lines)}

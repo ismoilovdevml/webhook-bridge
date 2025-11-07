@@ -38,11 +38,33 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(
-    title="Webhook Bridge",
-    description="Universal Git Notification System - Forward webhooks from GitLab, GitHub, Bitbucket to any notification platform",
+    title="Webhook Bridge API",
+    description="Universal webhook receiver for GitLab, GitHub, and Bitbucket. Forward Git events to Telegram, Slack, Discord, Mattermost, and Email.",
     version="1.0.0",
-    docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
-    redoc_url="/redoc" if settings.ENVIRONMENT == "development" else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_tags=[
+        {
+            "name": "health",
+            "description": "Health check and system status"
+        },
+        {
+            "name": "webhooks",
+            "description": "Webhook receiver for Git platforms"
+        },
+        {
+            "name": "providers",
+            "description": "Notification providers management"
+        },
+        {
+            "name": "events",
+            "description": "Webhook events history"
+        },
+        {
+            "name": "dashboard",
+            "description": "Statistics and analytics"
+        }
+    ],
     lifespan=lifespan
 )
 
@@ -59,20 +81,55 @@ app.add_middleware(
 app.include_router(api_router)
 
 
-@app.get("/")
+@app.get(
+    "/",
+    tags=["health"],
+    summary="Root endpoint",
+    description="Get basic information about the Webhook Bridge API"
+)
 def root():
-    """Root endpoint."""
+    """Root endpoint with API information."""
     return {
-        "service": "Webhook Bridge",
+        "service": "Webhook Bridge API",
         "version": "1.0.0",
         "status": "running",
-        "docs": "/docs" if settings.ENVIRONMENT == "development" else "disabled",
+        "documentation": {
+            "swagger": "/docs",
+            "redoc": "/redoc",
+            "openapi": "/openapi.json"
+        },
+        "endpoints": {
+            "health": "/health",
+            "webhook": "/api/webhook/git",
+            "providers": "/api/providers",
+            "events": "/api/events",
+            "dashboard": "/api/dashboard"
+        }
     }
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    tags=["health"],
+    summary="Health check",
+    description="Check if the service is healthy and running",
+    responses={
+        200: {
+            "description": "Service is healthy",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "healthy",
+                        "service": "webhook-bridge",
+                        "version": "1.0.0"
+                    }
+                }
+            }
+        }
+    }
+)
 def health_check():
-    """Health check endpoint."""
+    """Health check endpoint for monitoring and load balancers."""
     return {
         "status": "healthy",
         "service": "webhook-bridge",

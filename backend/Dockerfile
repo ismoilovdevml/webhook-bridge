@@ -18,6 +18,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
+# Copy test files and configuration
+COPY tests/ ./tests/
+COPY pytest.ini .
+COPY .flake8 .
+
 # Create directory for database
 RUN mkdir -p /data
 

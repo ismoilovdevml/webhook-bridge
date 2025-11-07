@@ -5,10 +5,8 @@
         <h1>🔗 Webhook Bridge</h1>
       </div>
       <div class="navbar-menu">
-        <router-link to="/" class="nav-link">Dashboard</router-link>
-        <router-link to="/providers" class="nav-link">Providers</router-link>
-        <router-link to="/events" class="nav-link">Events</router-link>
-        <router-link to="/settings" class="nav-link">Settings</router-link>
+        <router-link to="/" class="nav-link">Alerting & Notifications</router-link>
+        <router-link to="/dashboard" class="nav-link">Dashboard</router-link>
       </div>
     </nav>
 

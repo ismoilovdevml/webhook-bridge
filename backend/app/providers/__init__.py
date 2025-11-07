@@ -5,6 +5,7 @@ from .telegram import TelegramProvider
 from .slack import SlackProvider
 from .mattermost import MattermostProvider
 from .discord import DiscordProvider
+from .email import EmailProvider
 
 # Provider registry
 PROVIDERS = {
@@ -12,6 +13,7 @@ PROVIDERS = {
     "slack": SlackProvider,
     "mattermost": MattermostProvider,
     "discord": DiscordProvider,
+    "email": EmailProvider,
 }
 
 
@@ -44,6 +46,7 @@ __all__ = [
     "SlackProvider",
     "MattermostProvider",
     "DiscordProvider",
+    "EmailProvider",
     "PROVIDERS",
     "get_provider",
 ]

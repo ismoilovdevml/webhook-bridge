@@ -1,29 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import Alerting from '../views/Alerting.vue'
 import Dashboard from '../views/Dashboard.vue'
-import Providers from '../views/Providers.vue'
-import Events from '../views/Events.vue'
-import Settings from '../views/Settings.vue'
 
 const routes = [
   {
     path: '/',
+    name: 'Alerting',
+    component: Alerting
+  },
+  {
+    path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard
-  },
-  {
-    path: '/providers',
-    name: 'Providers',
-    component: Providers
-  },
-  {
-    path: '/events',
-    name: 'Events',
-    component: Events
-  },
-  {
-    path: '/settings',
-    name: 'Settings',
-    component: Settings
   }
 ]
 

@@ -12,7 +12,9 @@ class BitbucketParser(BaseParser):
 
     def parse(self, headers: Dict[str, str], payload: Dict[str, Any]) -> ParsedEvent:
         """Parse Bitbucket webhook payload"""
-        event_key = headers.get("x-event-key", "")
+        # Normalize headers to lowercase
+        headers_lower = {k.lower(): v for k, v in headers.items()}
+        event_key = headers_lower.get("x-event-key", "")
 
         # Route to specific parser based on event type
         if "push" in event_key:

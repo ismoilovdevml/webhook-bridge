@@ -29,8 +29,8 @@ class HTMLFormatter(BaseFormatter):
         ]
 
         # Add branch if present
-        if event.branch:
-            lines.append(f"<b>Branch:</b> <code>{self._escape_html(event.branch)}</code>")
+        if event.ref:
+            lines.append(f"<b>Branch:</b> <code>{self._escape_html(event.ref)}</code>")
 
         # Add specific event data
         if event.event_type == "push" and event.commits:
@@ -43,7 +43,7 @@ class HTMLFormatter(BaseFormatter):
                 lines.append(f"• ... and {len(event.commits) - 3} more")
 
         elif event.event_type in ["merge_request", "pull_request"]:
-            mr_data = event.data
+            mr_data = event.raw_data
             status = mr_data.get("status", "opened")
             status_emoji = self._get_status_emoji(status)
             title = self._escape_html(mr_data.get("title", "N/A"))
@@ -57,7 +57,7 @@ class HTMLFormatter(BaseFormatter):
                 lines.append(f"<b>Merge:</b> <code>{src}</code> → <code>{tgt}</code>")
 
         elif event.event_type in ["pipeline", "workflow_run"]:
-            pipeline_data = event.data
+            pipeline_data = event.raw_data
             status = pipeline_data.get("status", "unknown")
             status_emoji = self._get_status_emoji(status)
             lines.extend([
@@ -71,7 +71,7 @@ class HTMLFormatter(BaseFormatter):
                 lines.append(f"<b>Stages:</b> {', '.join(stages)}")
 
         elif event.event_type in ["issue", "issues"]:
-            issue_data = event.data
+            issue_data = event.raw_data
             status = issue_data.get("action", "opened")
             status_emoji = self._get_status_emoji(status)
             title = self._escape_html(issue_data.get("title", "N/A"))
@@ -81,7 +81,7 @@ class HTMLFormatter(BaseFormatter):
             ])
 
         elif event.event_type in ["comment", "note"]:
-            comment_data = event.data
+            comment_data = event.raw_data
             comment_body = self._escape_html(
                 self._truncate(comment_data.get("body", ""), 150)
             )
@@ -92,7 +92,7 @@ class HTMLFormatter(BaseFormatter):
             ])
 
         elif event.event_type == "release":
-            release_data = event.data
+            release_data = event.raw_data
             tag = self._escape_html(release_data.get("tag", "N/A"))
             name = self._escape_html(release_data.get("name", "N/A"))
             lines.extend([
@@ -101,8 +101,9 @@ class HTMLFormatter(BaseFormatter):
             ])
 
         # Add URL as link if present
-        if event.url:
-            lines.extend(["", f"<a href=\"{event.url}\">View Details</a>"])
+        url = self._get_event_url(event)
+        if url:
+            lines.extend(["", f"<a href=\"{url}\">View Details</a>"])
 
         return {
             "text": "\n".join(lines),

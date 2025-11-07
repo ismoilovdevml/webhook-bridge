@@ -12,7 +12,9 @@ class GitHubParser(BaseParser):
 
     def parse(self, headers: Dict[str, str], payload: Dict[str, Any]) -> ParsedEvent:
         """Parse GitHub webhook payload"""
-        event_type = headers.get("x-github-event", "")
+        # Normalize headers to lowercase
+        headers_lower = {k.lower(): v for k, v in headers.items()}
+        event_type = headers_lower.get("x-github-event", "")
 
         # Route to specific parser based on event type
         if event_type == "push":

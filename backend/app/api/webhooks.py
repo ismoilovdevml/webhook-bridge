@@ -1,6 +1,6 @@
 """Webhook receiver API endpoints."""
 
-from fastapi import APIRouter, Request, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Request, HTTPException, BackgroundTasks, Depends
 from typing import Any, Dict
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -90,21 +90,73 @@ async def process_and_send(
         db.commit()
 
 
-@router.post("/webhook/git")
+@router.post(
+    "/webhook/git",
+    summary="Receive Git Webhook",
+    description="""
+    Universal webhook receiver for GitLab, GitHub, and Bitbucket.
+
+    **Platform Detection:**
+    - Automatically detects the Git platform from webhook headers
+    - GitLab: `X-Gitlab-Event` header
+    - GitHub: `X-GitHub-Event` header
+    - Bitbucket: `X-Event-Key` header
+
+    **Supported Events:**
+    - Push events (commits)
+    - Merge/Pull requests
+    - Issues
+    - CI/CD pipelines
+    - Comments
+    - Tags and releases
+
+    **Processing:**
+    1. Parses incoming webhook payload
+    2. Formats message based on provider type
+    3. Sends notifications to all active providers in background
+    4. Logs event to database for analytics
+
+    **Configuration:**
+    - Set this URL in your Git platform's webhook settings
+    - Ensure you have at least one active provider configured
+    """,
+    responses={
+        200: {
+            "description": "Webhook successfully received and queued",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "message": "Webhook processed and queued for 2 provider(s)",
+                        "event": {
+                            "platform": "gitlab",
+                            "type": "push",
+                            "project": "myorg/myproject",
+                            "author": "john.doe"
+                        },
+                        "providers": 2
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Invalid webhook payload or unknown platform",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Unknown webhook platform. Check your headers."
+                    }
+                }
+            }
+        }
+    }
+)
 async def receive_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
-    db: Session = next(get_db())
+    db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
-    """
-    Receive webhook from Git platforms (GitLab, GitHub, Bitbucket).
-
-    This endpoint automatically detects the platform based on headers
-    and processes the event accordingly.
-
-    Returns:
-        Success message
-    """
+    """Receive and process webhooks from Git platforms."""
     try:
         # Get headers and body
         headers = dict(request.headers)
@@ -170,14 +222,27 @@ async def receive_webhook(
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.get("/webhook/test")
+@router.get(
+    "/webhook/test",
+    summary="Test Webhook Service",
+    description="Simple test endpoint to verify that the webhook service is operational",
+    responses={
+        200: {
+            "description": "Service is running",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "ok",
+                        "message": "Webhook service is running",
+                        "version": "1.0.0"
+                    }
+                }
+            }
+        }
+    }
+)
 async def test_webhook() -> Dict[str, str]:
-    """
-    Test endpoint to verify webhook service is running.
-
-    Returns:
-        Status message
-    """
+    """Test endpoint to verify webhook service is running."""
     return {
         "status": "ok",
         "message": "Webhook service is running",

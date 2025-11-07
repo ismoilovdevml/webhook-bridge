@@ -43,10 +43,10 @@ class SlackBlocksFormatter(BaseFormatter):
             }
         ]
 
-        if event.branch:
+        if event.ref:
             fields.append({
                 "type": "mrkdwn",
-                "text": f"*Branch:*\n`{event.branch}`"
+                "text": f"*Branch:*\n`{event.ref}`"
             })
 
         blocks.append({
@@ -73,7 +73,7 @@ class SlackBlocksFormatter(BaseFormatter):
             })
 
         elif event.event_type in ["merge_request", "pull_request"]:
-            mr_data = event.data
+            mr_data = event.raw_data
             status = mr_data.get("status", "opened")
             status_emoji = self._get_status_emoji(status)
 
@@ -105,7 +105,7 @@ class SlackBlocksFormatter(BaseFormatter):
                 })
 
         elif event.event_type in ["pipeline", "workflow_run"]:
-            pipeline_data = event.data
+            pipeline_data = event.raw_data
             status = pipeline_data.get("status", "unknown")
             status_emoji = self._get_status_emoji(status)
 
@@ -138,7 +138,7 @@ class SlackBlocksFormatter(BaseFormatter):
                 })
 
         elif event.event_type in ["issue", "issues"]:
-            issue_data = event.data
+            issue_data = event.raw_data
             status = issue_data.get("action", "opened")
             status_emoji = self._get_status_emoji(status)
 
@@ -162,7 +162,7 @@ class SlackBlocksFormatter(BaseFormatter):
                 })
 
         elif event.event_type in ["comment", "note"]:
-            comment_data = event.data
+            comment_data = event.raw_data
             comment_body = self._truncate(comment_data.get("body", ""), 150)
 
             blocks.append({
@@ -174,7 +174,8 @@ class SlackBlocksFormatter(BaseFormatter):
             })
 
         # Add button with URL if present
-        if event.url:
+        url = self._get_event_url(event)
+        if url:
             blocks.append({
                 "type": "actions",
                 "elements": [
@@ -185,7 +186,7 @@ class SlackBlocksFormatter(BaseFormatter):
                             "text": "View Details",
                             "emoji": True
                         },
-                        "url": event.url,
+                        "url": url,
                         "style": "primary"
                     }
                 ]
