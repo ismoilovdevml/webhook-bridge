@@ -13,11 +13,31 @@
       </div>
     </div>
 
-    <div style="margin-bottom: 1rem;">
-      <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; letter-spacing: -0.02em;">
-        <span style="font-size: 1.25rem;">🔔</span> Webhook Bridge
-      </h1>
-      <p style="color: var(--text-secondary); font-size: 13px;">Configure multi-channel alerts • {{ providers.filter(p => p.active).length }} active</p>
+    <!-- Header -->
+    <div class="header-container">
+      <div>
+        <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; letter-spacing: -0.02em;">
+          <span style="font-size: 1.25rem;">🔔</span> Webhook Bridge
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 13px;">Configure multi-channel alerts • {{ providers.filter(p => p.active).length }} active</p>
+      </div>
+
+      <div class="header-actions">
+        <!-- GitHub Link -->
+        <a href="https://github.com/ismoilovdevml/webhook-bridge" target="_blank" rel="noopener noreferrer" class="github-link">
+          <GitHubIcon :size="20" />
+        </a>
+
+        <!-- Theme Toggle -->
+        <button class="theme-toggle" @click="toggleTheme" :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+          <div class="theme-toggle-track">
+            <div class="theme-toggle-thumb" :class="{ active: !isDarkMode }">
+              <span v-if="isDarkMode" class="theme-icon">🌙</span>
+              <span v-else class="theme-icon">☀️</span>
+            </div>
+          </div>
+        </button>
+      </div>
     </div>
 
     <!-- Tabs -->
@@ -36,68 +56,93 @@
     <!-- Webhook Setup Tab -->
     <div v-if="currentTab === 'webhook'">
       <!-- Webhook URL Card -->
-      <div class="card" style="margin-bottom: 1rem;">
-        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 0.5rem;">Universal Webhook URL</h3>
-        <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 1rem;">Use this URL for GitLab, GitHub, and Bitbucket - automatically detects platform</p>
-        <div class="webhook-url-box">
-          <span class="webhook-url-text">{{ webhookUrl }}</span>
-          <button class="btn btn-primary btn-sm" @click="copyWebhookUrl()">
-            Copy
+      <div class="card webhook-url-card">
+        <h3 class="webhook-url-title">
+          <span class="webhook-icon">🔗</span>
+          Universal Webhook URL
+        </h3>
+        <p class="webhook-url-description">Use this URL for GitLab, GitHub, and Bitbucket - automatically detects platform</p>
+        <div class="webhook-url-box-new">
+          <input type="text" readonly :value="webhookUrl" class="webhook-url-input-new" @click="$event.target.select()">
+          <button class="btn-copy-new" @click="copyWebhookUrl()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy</span>
           </button>
         </div>
       </div>
 
       <!-- Platform Setup Cards -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+      <div class="platform-cards-grid">
         <!-- GitLab -->
-        <div class="card">
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <div class="provider-icon" style="background: rgba(252, 109, 38, 0.1); color: #fc6d26; width: 36px; height: 36px;">
-              <GitLabIcon :size="20" />
+        <div class="platform-card gitlab-card">
+          <div class="platform-card-header">
+            <div class="platform-icon-large" style="background: linear-gradient(135deg, #fc6d26 0%, #e24329 100%);">
+              <GitLabIcon :size="24" />
             </div>
-            <div>
-              <h3 style="font-size: 14px; font-weight: 600; margin: 0;">GitLab</h3>
-              <p style="color: var(--text-secondary); font-size: 11px; margin: 0;">Settings → Webhooks</p>
+            <div class="platform-card-info">
+              <h3 class="platform-card-title">GitLab</h3>
+              <p class="platform-card-path">Settings → Webhooks</p>
             </div>
           </div>
-          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
-            <li>• Select triggers (Push, MR, Issues)</li>
-            <li>• Click "Add webhook"</li>
-          </ul>
+          <div class="platform-card-steps">
+            <div class="platform-step">
+              <span class="step-number">1</span>
+              <span class="step-text">Select triggers (Push, Merge Request, Issues)</span>
+            </div>
+            <div class="platform-step">
+              <span class="step-number">2</span>
+              <span class="step-text">Click "Add webhook" button</span>
+            </div>
+          </div>
         </div>
 
         <!-- GitHub -->
-        <div class="card">
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <div class="provider-icon" style="background: rgba(36, 41, 47, 0.1); color: #fff; width: 36px; height: 36px;">
-              <GitHubIcon :size="20" />
+        <div class="platform-card github-card">
+          <div class="platform-card-header">
+            <div class="platform-icon-large" style="background: linear-gradient(135deg, #333 0%, #24292f 100%);">
+              <GitHubIcon :size="24" />
             </div>
-            <div>
-              <h3 style="font-size: 14px; font-weight: 600; margin: 0;">GitHub</h3>
-              <p style="color: var(--text-secondary); font-size: 11px; margin: 0;">Settings → Webhooks</p>
+            <div class="platform-card-info">
+              <h3 class="platform-card-title">GitHub</h3>
+              <p class="platform-card-path">Settings → Webhooks</p>
             </div>
           </div>
-          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
-            <li>• Content type: application/json</li>
-            <li>• Select events & save</li>
-          </ul>
+          <div class="platform-card-steps">
+            <div class="platform-step">
+              <span class="step-number">1</span>
+              <span class="step-text">Content type: application/json</span>
+            </div>
+            <div class="platform-step">
+              <span class="step-number">2</span>
+              <span class="step-text">Select events & save</span>
+            </div>
+          </div>
         </div>
 
         <!-- Bitbucket -->
-        <div class="card">
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <div class="provider-icon" style="background: rgba(33, 110, 225, 0.1); color: #216ee1; width: 36px; height: 36px;">
-              <BitbucketIcon :size="20" />
+        <div class="platform-card bitbucket-card">
+          <div class="platform-card-header">
+            <div class="platform-icon-large" style="background: linear-gradient(135deg, #2684FF 0%, #0052CC 100%);">
+              <BitbucketIcon :size="24" />
             </div>
-            <div>
-              <h3 style="font-size: 14px; font-weight: 600; margin: 0;">Bitbucket</h3>
-              <p style="color: var(--text-secondary); font-size: 11px; margin: 0;">Repository → Webhooks</p>
+            <div class="platform-card-info">
+              <h3 class="platform-card-title">Bitbucket</h3>
+              <p class="platform-card-path">Repository → Webhooks</p>
             </div>
           </div>
-          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
-            <li>• Select triggers (Push, PR)</li>
-            <li>• Click "Save"</li>
-          </ul>
+          <div class="platform-card-steps">
+            <div class="platform-step">
+              <span class="step-number">1</span>
+              <span class="step-text">Select triggers (Push, Pull Request)</span>
+            </div>
+            <div class="platform-step">
+              <span class="step-number">2</span>
+              <span class="step-text">Click "Save" button</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -206,11 +251,17 @@
         </div>
 
         <div style="display: flex; gap: 0.75rem; margin-top: 2rem;">
-          <button class="btn btn-primary" @click="saveConfiguration">
-            ✓ Save Configuration
+          <button class="btn btn-success" @click="saveConfiguration">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Save Configuration</span>
           </button>
           <button class="btn btn-secondary" @click="testConnection">
-            🔌 Test Connection
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+            </svg>
+            <span>Test Connection</span>
           </button>
         </div>
       </div>
@@ -326,6 +377,7 @@ const selectedProvider = ref('telegram')
 const configData = ref({})
 const searchQuery = ref('')
 const notifications = ref([])
+const isDarkMode = ref(true)
 
 const providers = computed(() => providersStore.providers)
 const events = computed(() => eventsStore.events)
@@ -354,7 +406,22 @@ watch(selectedProvider, (newProvider) => {
   }
 })
 
+// Theme management
+function toggleTheme() {
+  isDarkMode.value = !isDarkMode.value
+  const theme = isDarkMode.value ? 'dark' : 'light'
+  document.documentElement.setAttribute('data-theme', theme)
+  localStorage.setItem('theme', theme)
+}
+
+function loadTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'dark'
+  isDarkMode.value = savedTheme === 'dark'
+  document.documentElement.setAttribute('data-theme', savedTheme)
+}
+
 onMounted(() => {
+  loadTheme()
   providersStore.fetchProviders()
   eventsStore.fetchEvents()
   eventsStore.fetchStats()
