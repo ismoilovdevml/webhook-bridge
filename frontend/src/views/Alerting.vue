@@ -21,45 +21,118 @@
     </div>
 
     <!-- Webhook Setup Tab -->
-    <div v-if="currentTab === 'webhook'" class="card">
-      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-        <div class="provider-icon" style="background: rgba(249, 115, 22, 0.1); color: var(--accent-primary);">
-          <span>🔧</span>
-        </div>
-        <div>
-          <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">GitLab Webhook Setup</h3>
-          <p style="color: var(--text-secondary); font-size: 0.875rem;">Real-time alerts using GitLab webhooks (instant notifications)</p>
-        </div>
-      </div>
-
+    <div v-if="currentTab === 'webhook'" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- Info Section -->
       <div class="card" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3);">
         <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
           <span>✅</span> Why use webhooks?
         </h4>
         <ul style="list-style: none; padding: 0;">
           <li style="margin-bottom: 0.5rem;">⚡ <strong>Instant alerts</strong> - No delay, get notified immediately</li>
-          <li style="margin-bottom: 0.5rem;">🎯 <strong>Accurate</strong> - GitLab sends event directly to us</li>
+          <li style="margin-bottom: 0.5rem;">🎯 <strong>Accurate</strong> - Platform sends event directly to us</li>
           <li style="margin-bottom: 0.5rem;">📊 <strong>Efficient</strong> - No polling, saves resources</li>
-          <li>📦 <strong>Complete data</strong> - Full pipeline information</li>
+          <li>📦 <strong>Complete data</strong> - Full event information</li>
         </ul>
       </div>
 
-      <h3 style="margin: 2rem 0 1rem;">Your Webhook URL</h3>
-      <div class="webhook-url-box">
-        <span class="webhook-url-text">{{ webhookUrl }}</span>
-        <button class="btn btn-primary btn-sm" @click="copyWebhookUrl">
-          📋 Copy
-        </button>
+      <!-- GitLab Section -->
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="provider-icon" style="background: rgba(252, 109, 38, 0.1); color: #fc6d26;">
+            <GitLabIcon :size="32" />
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">GitLab Webhook</h3>
+            <p style="color: var(--text-secondary); font-size: 0.875rem;">Setup webhook for GitLab repositories</p>
+          </div>
+        </div>
+
+        <div class="webhook-url-box">
+          <span class="webhook-url-text">{{ webhookUrl }}</span>
+          <button class="btn btn-primary btn-sm" @click="copyWebhookUrl()">
+            📋 Copy
+          </button>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+          💡 This is a universal webhook URL. It automatically detects GitLab webhooks via headers.
+        </p>
+
+        <div class="card" style="background: var(--bg-primary); margin-top: 1rem;">
+          <h4 style="margin-bottom: 1rem;">Setup Instructions</h4>
+          <ol style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 2;">
+            <li><strong>Go to your GitLab project</strong><br><span style="font-size: 0.875rem;">Settings → Webhooks</span></li>
+            <li><strong>Paste the webhook URL above</strong><br><span style="font-size: 0.875rem;">In the "URL" field</span></li>
+            <li><strong>Select triggers</strong><br><span style="font-size: 0.875rem;">Push, Merge Requests, Issues, Pipeline, etc.</span></li>
+            <li><strong>Click "Add webhook"</strong><br><span style="font-size: 0.875rem;">Test it and you're done!</span></li>
+          </ol>
+        </div>
       </div>
 
+      <!-- GitHub Section -->
       <div class="card">
-        <h4 style="margin-bottom: 1rem;">☑️ Setup Instructions</h4>
-        <ol style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 2;">
-          <li><strong>Go to your GitLab project</strong><br><span style="font-size: 0.875rem;">Settings → Webhooks</span></li>
-          <li><strong>Paste the webhook URL above</strong><br><span style="font-size: 0.875rem;">In the "URL" field</span></li>
-          <li><strong>Select "Pipeline events" trigger</strong><br><span style="font-size: 0.875rem;">Check only "Pipeline events"</span></li>
-          <li><strong>Click "Add webhook"</strong><br><span style="font-size: 0.875rem;">Done! Test it by running a pipeline</span></li>
-        </ol>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="provider-icon" style="background: rgba(36, 41, 47, 0.1); color: #24292f;">
+            <GitHubIcon :size="32" />
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">GitHub Webhook</h3>
+            <p style="color: var(--text-secondary); font-size: 0.875rem;">Setup webhook for GitHub repositories</p>
+          </div>
+        </div>
+
+        <div class="webhook-url-box">
+          <span class="webhook-url-text">{{ webhookUrl }}</span>
+          <button class="btn btn-primary btn-sm" @click="copyWebhookUrl()">
+            📋 Copy
+          </button>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+          💡 This is a universal webhook URL. It automatically detects GitHub webhooks via headers.
+        </p>
+
+        <div class="card" style="background: var(--bg-primary); margin-top: 1rem;">
+          <h4 style="margin-bottom: 1rem;">Setup Instructions</h4>
+          <ol style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 2;">
+            <li><strong>Go to your GitHub repository</strong><br><span style="font-size: 0.875rem;">Settings → Webhooks → Add webhook</span></li>
+            <li><strong>Paste the webhook URL above</strong><br><span style="font-size: 0.875rem;">In the "Payload URL" field</span></li>
+            <li><strong>Content type: application/json</strong><br><span style="font-size: 0.875rem;">Select "application/json"</span></li>
+            <li><strong>Select events</strong><br><span style="font-size: 0.875rem;">Pushes, Pull requests, Issues, etc.</span></li>
+            <li><strong>Click "Add webhook"</strong><br><span style="font-size: 0.875rem;">GitHub will test it automatically</span></li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Bitbucket Section -->
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="provider-icon" style="background: rgba(33, 110, 225, 0.1); color: #216ee1;">
+            <BitbucketIcon :size="32" />
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Bitbucket Webhook</h3>
+            <p style="color: var(--text-secondary); font-size: 0.875rem;">Setup webhook for Bitbucket repositories</p>
+          </div>
+        </div>
+
+        <div class="webhook-url-box">
+          <span class="webhook-url-text">{{ webhookUrl }}</span>
+          <button class="btn btn-primary btn-sm" @click="copyWebhookUrl()">
+            📋 Copy
+          </button>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+          💡 This is a universal webhook URL. It automatically detects Bitbucket webhooks via headers.
+        </p>
+
+        <div class="card" style="background: var(--bg-primary); margin-top: 1rem;">
+          <h4 style="margin-bottom: 1rem;">Setup Instructions</h4>
+          <ol style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 2;">
+            <li><strong>Go to your Bitbucket repository</strong><br><span style="font-size: 0.875rem;">Repository settings → Webhooks → Add webhook</span></li>
+            <li><strong>Paste the webhook URL above</strong><br><span style="font-size: 0.875rem;">In the "URL" field</span></li>
+            <li><strong>Select triggers</strong><br><span style="font-size: 0.875rem;">Push, Pull requests, etc.</span></li>
+            <li><strong>Click "Save"</strong><br><span style="font-size: 0.875rem;">Bitbucket will validate the URL</span></li>
+          </ol>
+        </div>
       </div>
     </div>
 
@@ -73,8 +146,8 @@
           :class="{ active: selectedProvider === type.id }"
           @click="selectedProvider = type.id"
         >
-          <div class="provider-icon" :style="{ background: type.color + '20', color: type.color }">
-            <span>{{ type.icon }}</span>
+          <div class="provider-icon" :style="{ background: type.bgColor, color: type.color }">
+            <component :is="type.icon" :size="28" />
           </div>
           <div class="provider-info">
             <div class="provider-name">{{ type.name }}</div>
@@ -86,7 +159,9 @@
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <div style="display: flex; align-items: center; gap: 1rem;">
-            <span style="font-size: 1.5rem;">{{ getCurrentProviderIcon() }}</span>
+            <div class="provider-icon" :style="{ background: getCurrentProviderBgColor(), color: getCurrentProviderColor() }">
+              <component :is="getCurrentProviderIcon()" :size="28" />
+            </div>
             <h3 style="font-size: 1.25rem; font-weight: 600;">{{ getCurrentProviderName() }} Configuration</h3>
           </div>
           <label class="toggle">
@@ -105,6 +180,12 @@
           <div class="form-group">
             <label class="form-label">Chat ID</label>
             <input v-model="configData.chat_id" class="form-input" placeholder="-1001234567890">
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">Use @userinfobot or @getmyid_bot to get your chat ID</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thread ID (Optional)</label>
+            <input v-model="configData.thread_id" class="form-input" placeholder="123456">
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">For Telegram group topics/forums. Leave empty for regular chats</p>
           </div>
         </div>
 
@@ -125,6 +206,14 @@
           <div class="form-group">
             <label class="form-label">Webhook URL</label>
             <input v-model="configData.webhook_url" class="form-input" placeholder="https://discord.com/api/webhooks/...">
+          </div>
+        </div>
+
+        <!-- Mattermost Config -->
+        <div v-if="selectedProvider === 'mattermost'">
+          <div class="form-group">
+            <label class="form-label">Webhook URL</label>
+            <input v-model="configData.webhook_url" class="form-input" placeholder="https://your-mattermost.com/hooks/...">
           </div>
         </div>
 
@@ -245,10 +334,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useProvidersStore } from '../stores/providers'
 import { useEventsStore } from '../stores/events'
 import api from '../services/api'
+
+// Import icon components
+import TelegramIcon from '../components/icons/TelegramIcon.vue'
+import SlackIcon from '../components/icons/SlackIcon.vue'
+import DiscordIcon from '../components/icons/DiscordIcon.vue'
+import MattermostIcon from '../components/icons/MattermostIcon.vue'
+import EmailIcon from '../components/icons/EmailIcon.vue'
+import WebhookIcon from '../components/icons/WebhookIcon.vue'
+import GitLabIcon from '../components/icons/GitLabIcon.vue'
+import GitHubIcon from '../components/icons/GitHubIcon.vue'
+import BitbucketIcon from '../components/icons/BitbucketIcon.vue'
 
 const providersStore = useProvidersStore()
 const eventsStore = useEventsStore()
@@ -265,12 +365,25 @@ const stats = computed(() => eventsStore.stats)
 const webhookUrl = computed(() => `${window.location.origin}/api/webhook/git`)
 
 const providerTypes = [
-  { id: 'telegram', name: 'Telegram', icon: '✈️', color: '#3b82f6' },
-  { id: 'slack', name: 'Slack', icon: '#️⃣', color: '#8b5cf6' },
-  { id: 'discord', name: 'Discord', icon: '🎮', color: '#6366f1' },
-  { id: 'email', name: 'Email', icon: '📧', color: '#64748b' },
-  { id: 'webhook', name: 'Webhook', icon: '🔗', color: '#78716c' },
+  { id: 'telegram', name: 'Telegram', icon: TelegramIcon, color: '#0088cc', bgColor: 'rgba(0, 136, 204, 0.1)' },
+  { id: 'slack', name: 'Slack', icon: SlackIcon, color: '#611f69', bgColor: 'rgba(97, 31, 105, 0.1)' },
+  { id: 'discord', name: 'Discord', icon: DiscordIcon, color: '#5865F2', bgColor: 'rgba(88, 101, 242, 0.1)' },
+  { id: 'mattermost', name: 'Mattermost', icon: MattermostIcon, color: '#0058CC', bgColor: 'rgba(0, 88, 204, 0.1)' },
+  { id: 'email', name: 'Email', icon: EmailIcon, color: '#ea4335', bgColor: 'rgba(234, 67, 53, 0.1)' },
+  { id: 'webhook', name: 'Webhook', icon: WebhookIcon, color: '#78716c', bgColor: 'rgba(120, 113, 108, 0.1)' },
 ]
+
+// Watch for provider selection changes
+watch(selectedProvider, (newProvider) => {
+  if (newProvider) {
+    const provider = providers.value.find(p => p.type === newProvider)
+    if (provider && provider.config) {
+      configData.value = { ...provider.config }
+    } else {
+      configData.value = {}
+    }
+  }
+})
 
 onMounted(() => {
   providersStore.fetchProviders()
@@ -289,15 +402,24 @@ function isProviderEnabled() {
 }
 
 function getCurrentProviderIcon() {
-  return providerTypes.find(p => p.id === selectedProvider.value)?.icon || '🔧'
+  return providerTypes.find(p => p.id === selectedProvider.value)?.icon || WebhookIcon
 }
 
 function getCurrentProviderName() {
   return providerTypes.find(p => p.id === selectedProvider.value)?.name || 'Provider'
 }
 
-function copyWebhookUrl() {
-  navigator.clipboard.writeText(webhookUrl.value)
+function getCurrentProviderColor() {
+  return providerTypes.find(p => p.id === selectedProvider.value)?.color || '#78716c'
+}
+
+function getCurrentProviderBgColor() {
+  return providerTypes.find(p => p.id === selectedProvider.value)?.bgColor || 'rgba(120, 113, 108, 0.1)'
+}
+
+function copyWebhookUrl(suffix = '') {
+  const fullUrl = webhookUrl.value + suffix
+  navigator.clipboard.writeText(fullUrl)
   alert('Webhook URL copied to clipboard!')
 }
 
