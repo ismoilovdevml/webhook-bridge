@@ -188,8 +188,6 @@ class SlackBlocksFormatter(BaseFormatter):
 
         # Fallback text for notifications
         event_title = event.event_type.replace("_", " ").title()
-        fallback_text = (
-            f"{emoji} {event_title} in {event.project} by {event.author}"
-        )
+        fallback_text = f"{emoji} {event_title} in {event.project} by {event.author}"
 
         return {"blocks": blocks, "text": fallback_text}
