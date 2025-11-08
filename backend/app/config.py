@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     WEBHOOK_SECRET: str = ""
     ENCRYPTION_KEY: str = ""  # For encrypting sensitive provider data
 
+    # Admin User (Created on first startup)
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = "change-this-password"
+    ADMIN_EMAIL: str = "admin@localhost"
+
     # API Authentication
     API_KEY_ENABLED: bool = True
     API_KEY_HEADER: str = "X-API-Key"

@@ -38,6 +38,17 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize database: {e}")
         raise
 
+    # Initialize admin user
+    try:
+        from .database import SessionLocal
+        from .utils.init_admin import init_admin_user
+
+        db = SessionLocal()
+        init_admin_user(db)
+        db.close()
+    except Exception as e:
+        logger.error(f"Failed to initialize admin user: {e}")
+
     yield
 
     # Shutdown

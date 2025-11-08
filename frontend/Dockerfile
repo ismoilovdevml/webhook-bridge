@@ -1,5 +1,5 @@
 # Frontend Dockerfile for Webhook Bridge
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app

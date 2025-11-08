@@ -37,8 +37,29 @@
             </div>
           </div>
         </button>
+
+        <!-- Logout Button -->
+        <button class="logout-btn" @click="showLogoutConfirm = true" title="Logout">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Logout</span>
+        </button>
       </div>
     </div>
+
+    <!-- Logout Confirmation Modal -->
+    <ConfirmDialog
+      v-model="showLogoutConfirm"
+      title="Logout"
+      message="Are you sure you want to logout?"
+      confirm-text="Logout"
+      cancel-text="Cancel"
+      variant="danger"
+      @confirm="confirmLogout"
+    />
 
     <!-- Tabs -->
     <div class="tabs">
@@ -338,9 +359,14 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useProvidersStore } from '../stores/providers'
 import { useEventsStore } from '../stores/events'
+import { useAuthStore } from '../stores/auth'
 import api from '../services/api'
+
+// Import components
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 // Import icon components
 import TelegramIcon from '../components/icons/TelegramIcon.vue'
@@ -348,11 +374,12 @@ import SlackIcon from '../components/icons/SlackIcon.vue'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import MattermostIcon from '../components/icons/MattermostIcon.vue'
 import EmailIcon from '../components/icons/EmailIcon.vue'
-import WebhookIcon from '../components/icons/WebhookIcon.vue'
 import GitLabIcon from '../components/icons/GitLabIcon.vue'
 import GitHubIcon from '../components/icons/GitHubIcon.vue'
 import BitbucketIcon from '../components/icons/BitbucketIcon.vue'
 
+const router = useRouter()
+const authStore = useAuthStore()
 const providersStore = useProvidersStore()
 const eventsStore = useEventsStore()
 
@@ -362,20 +389,23 @@ const configData = ref({})
 const searchQuery = ref('')
 const notifications = ref([])
 const isDarkMode = ref(true)
+const showLogoutConfirm = ref(false)
 
 const providers = computed(() => providersStore.providers)
 const events = computed(() => eventsStore.events)
 const stats = computed(() => eventsStore.stats)
 
-const webhookUrl = computed(() => `${window.location.origin}/api/webhook/git`)
+const webhookUrl = computed(() => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+  return `${backendUrl}/api/webhook/git`
+})
 
 const providerTypes = [
   { id: 'telegram', name: 'Telegram', icon: TelegramIcon, color: '#0088cc', bgColor: 'rgba(0, 136, 204, 0.1)' },
   { id: 'slack', name: 'Slack', icon: SlackIcon, color: '#611f69', bgColor: 'rgba(97, 31, 105, 0.1)' },
   { id: 'discord', name: 'Discord', icon: DiscordIcon, color: '#5865F2', bgColor: 'rgba(88, 101, 242, 0.1)' },
   { id: 'mattermost', name: 'Mattermost', icon: MattermostIcon, color: '#0058CC', bgColor: 'rgba(0, 88, 204, 0.1)' },
-  { id: 'email', name: 'Email', icon: EmailIcon, color: '#ea4335', bgColor: 'rgba(234, 67, 53, 0.1)' },
-  { id: 'webhook', name: 'Webhook', icon: WebhookIcon, color: '#78716c', bgColor: 'rgba(120, 113, 108, 0.1)' },
+  { id: 'email', name: 'Email', icon: EmailIcon, color: '#ea4335', bgColor: 'rgba(234, 67, 53, 0.1)' }
 ]
 
 // Watch for provider selection changes
@@ -422,7 +452,7 @@ function isProviderEnabled() {
 }
 
 function getCurrentProviderIcon() {
-  return providerTypes.find(p => p.id === selectedProvider.value)?.icon || WebhookIcon
+  return providerTypes.find(p => p.id === selectedProvider.value)?.icon || TelegramIcon
 }
 
 function getCurrentProviderName() {
@@ -503,5 +533,10 @@ function formatDate(dateStr) {
 async function refresh() {
   await eventsStore.fetchEvents()
   await eventsStore.fetchStats()
+}
+
+function confirmLogout() {
+  authStore.logout()
+  router.push('/login')
 }
 </script>
