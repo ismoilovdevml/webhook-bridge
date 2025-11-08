@@ -231,7 +231,6 @@ class BitbucketParser(BaseParser):
         """Parse repository updated event"""
         repository = payload.get("repository", {})
         actor = payload.get("actor", {})
-        changes = payload.get("changes", {})
 
         return ParsedEvent(
             platform="bitbucket",
@@ -250,7 +249,6 @@ class BitbucketParser(BaseParser):
         """Parse repository transfer event"""
         repository = payload.get("repository", {})
         actor = payload.get("actor", {})
-        previous_workspace = payload.get("previous_workspace", {})
 
         return ParsedEvent(
             platform="bitbucket",
@@ -286,7 +284,6 @@ class BitbucketParser(BaseParser):
         repository = payload.get("repository", {})
         actor = payload.get("actor", {})
         comment = payload.get("comment", {})
-        commit = payload.get("commit", {})
 
         return ParsedEvent(
             platform="bitbucket",
