@@ -37,78 +37,186 @@ class HTMLFormatter(BaseFormatter):
             lines.extend(["", f"<b>Commits:</b> {len(event.commits)}"])
             for commit in event.commits[:3]:  # Show first 3 commits
                 commit_id = commit.get("id", "")[:8]
+                commit_url = commit.get("url", "")
                 msg = self._escape_html(self._truncate(commit.get("message", ""), 80))
-                lines.append(f"• <code>{commit_id}</code> {msg}")
+                if commit_url:
+                    lines.append(f'• <a href="{commit_url}"><code>{commit_id}</code></a> {msg}')
+                else:
+                    lines.append(f"• <code>{commit_id}</code> {msg}")
             if len(event.commits) > 3:
                 lines.append(f"• ... and {len(event.commits) - 3} more")
 
         elif event.event_type in ["merge_request", "pull_request"]:
-            mr_data = event.raw_data
-            status = mr_data.get("status", "opened")
+            status = event.mr_state or event.mr_action or "opened"
             status_emoji = self._get_status_emoji(status)
-            title = self._escape_html(mr_data.get("title", "N/A"))
+            title = self._escape_html(event.mr_title or "N/A")
+
+            # Make title clickable if URL exists
+            if event.mr_url:
+                title_display = f'<a href="{event.mr_url}">{title}</a>'
+            else:
+                title_display = title
+
             lines.extend(
                 [
                     f"<b>Status:</b> {status_emoji} {status.title()}",
-                    f"<b>Title:</b> {title}",
+                    f"<b>Title:</b> {title_display}",
                 ]
             )
-            if mr_data.get("source_branch") and mr_data.get("target_branch"):
-                src = self._escape_html(mr_data["source_branch"])
-                tgt = self._escape_html(mr_data["target_branch"])
+            if event.source_branch and event.target_branch:
+                src = self._escape_html(event.source_branch)
+                tgt = self._escape_html(event.target_branch)
                 lines.append(f"<b>Merge:</b> <code>{src}</code> → <code>{tgt}</code>")
 
         elif event.event_type in ["pipeline", "workflow_run"]:
-            pipeline_data = event.raw_data
-            status = pipeline_data.get("status", "unknown")
+            status = event.pipeline_status or "unknown"
             status_emoji = self._get_status_emoji(status)
-            lines.extend(
-                [
-                    f"<b>Status:</b> {status_emoji} {status.upper()}",
-                ]
-            )
-            if pipeline_data.get("duration"):
-                duration = pipeline_data["duration"]
-                lines.append(f"<b>Duration:</b> {duration}s")
-            if pipeline_data.get("stages"):
-                stages = pipeline_data["stages"]
-                lines.append(f"<b>Stages:</b> {', '.join(stages)}")
+
+            # Make pipeline ID clickable if URL exists
+            if event.pipeline_id and event.pipeline_url:
+                pipeline_link = f'<a href="{event.pipeline_url}">#{event.pipeline_id}</a>'
+                lines.append(f"<b>Pipeline:</b> {pipeline_link}")
+
+            lines.append(f"<b>Status:</b> {status_emoji} {status.upper()}")
+
+            if event.pipeline_duration:
+                lines.append(f"<b>Duration:</b> {event.pipeline_duration}s")
+            if event.pipeline_stages:
+                lines.append(f"<b>Stages:</b> {', '.join(event.pipeline_stages)}")
 
         elif event.event_type in ["issue", "issues"]:
-            issue_data = event.raw_data
-            status = issue_data.get("action", "opened")
+            status = event.issue_action or event.issue_state or "opened"
             status_emoji = self._get_status_emoji(status)
-            title = self._escape_html(issue_data.get("title", "N/A"))
+            title = self._escape_html(event.issue_title or "N/A")
+
+            # Make title clickable if URL exists
+            if event.issue_url:
+                title_display = f'<a href="{event.issue_url}">{title}</a>'
+            else:
+                title_display = title
+
             lines.extend(
                 [
                     f"<b>Action:</b> {status_emoji} {status.title()}",
-                    f"<b>Title:</b> {title}",
+                    f"<b>Title:</b> {title_display}",
                 ]
             )
+
+            # Add issue number if available
+            if event.issue_iid:
+                lines.insert(-2, f"<b>Issue:</b> #{event.issue_iid}")
 
         elif event.event_type in ["comment", "note"]:
-            comment_data = event.raw_data
             comment_body = self._escape_html(
-                self._truncate(comment_data.get("body", ""), 150)
+                self._truncate(event.comment_body or "", 150)
             )
             noteable_type = self._escape_html(
-                comment_data.get("noteable_type", "Unknown")
-            )
-            lines.extend(
-                [
-                    f"<b>Comment on:</b> {noteable_type}",
-                    f"<b>Comment:</b> {comment_body}",
-                ]
+                event.raw_data.get("noteable_type", "Unknown")
             )
 
+            lines.extend([f"<b>Comment on:</b> {noteable_type}"])
+
+            # Make comment clickable if URL exists
+            if event.comment_url:
+                lines.append(f'<b>Comment:</b> <a href="{event.comment_url}">View comment</a>')
+            else:
+                lines.append(f"<b>Comment:</b> {comment_body}")
+
         elif event.event_type == "release":
-            release_data = event.raw_data
-            tag = self._escape_html(release_data.get("tag", "N/A"))
-            name = self._escape_html(release_data.get("name", "N/A"))
+            tag = self._escape_html(event.release_tag or "N/A")
+            name = self._escape_html(event.release_name or "N/A")
+
+            # Make release name clickable if URL exists
+            if event.release_url:
+                name_display = f'<a href="{event.release_url}">{name}</a>'
+            else:
+                name_display = name
+
             lines.extend(
                 [
                     f"<b>Tag:</b> <code>{tag}</code>",
-                    f"<b>Name:</b> {name}",
+                    f"<b>Name:</b> {name_display}",
+                ]
+            )
+
+            # Add description if available
+            if event.release_description:
+                desc = self._escape_html(self._truncate(event.release_description, 100))
+                lines.append(f"<b>Description:</b> {desc}")
+
+        elif event.event_type == "deployment":
+            status = event.deployment_status or "unknown"
+            status_emoji = self._get_status_emoji(status)
+            environment = self._escape_html(event.deployment_environment or "N/A")
+
+            lines.extend(
+                [
+                    f"<b>Environment:</b> {environment}",
+                    f"<b>Status:</b> {status_emoji} {status.title()}",
+                ]
+            )
+
+            # Add deployment ID if available
+            if event.deployment_id:
+                if event.deployment_url:
+                    lines.insert(-2, f'<b>Deployment:</b> <a href="{event.deployment_url}">#{event.deployment_id}</a>')
+                else:
+                    lines.insert(-2, f"<b>Deployment:</b> #{event.deployment_id}")
+
+        elif event.event_type == "job":
+            status = event.job_status or "unknown"
+            status_emoji = self._get_status_emoji(status)
+            job_name = self._escape_html(event.job_name or "N/A")
+            job_stage = self._escape_html(event.job_stage or "N/A")
+
+            lines.extend(
+                [
+                    f"<b>Job:</b> {job_name}",
+                    f"<b>Stage:</b> {job_stage}",
+                    f"<b>Status:</b> {status_emoji} {status.upper()}",
+                ]
+            )
+
+            if event.pipeline_id:
+                lines.append(f"<b>Pipeline:</b> #{event.pipeline_id}")
+
+        elif event.event_type == "feature_flag":
+            flag_name = self._escape_html(event.feature_flag_name or "N/A")
+            active_status = "✅ Active" if event.feature_flag_active else "❌ Inactive"
+
+            lines.extend(
+                [
+                    f"<b>Flag:</b> {flag_name}",
+                    f"<b>Status:</b> {active_status}",
+                ]
+            )
+
+            if event.feature_flag_description:
+                desc = self._escape_html(self._truncate(event.feature_flag_description, 100))
+                lines.append(f"<b>Description:</b> {desc}")
+
+        elif event.event_type == "emoji":
+            emoji_name = self._escape_html(event.emoji_name or "")
+            action = event.emoji_action or "added"
+            target_type = self._escape_html(event.emoji_awardable_type or "item")
+
+            lines.extend(
+                [
+                    f"<b>Emoji:</b> :{emoji_name}:",
+                    f"<b>Action:</b> {action.title()}",
+                    f"<b>On:</b> {target_type}",
+                ]
+            )
+
+        elif event.event_type == "access_token":
+            token_name = self._escape_html(event.token_name or "N/A")
+            expires_at = event.token_expires_at or "N/A"
+
+            lines.extend(
+                [
+                    f"<b>Token:</b> {token_name}",
+                    f"<b>Expires:</b> {expires_at}",
+                    f"<b>⚠️ Warning:</b> Token will expire soon!",
                 ]
             )
 

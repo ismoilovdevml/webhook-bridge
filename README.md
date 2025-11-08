@@ -20,11 +20,28 @@ Dashboard → Alerting → Click platform icon → Enter credentials → Test �
 **Slack/Discord/Mattermost**: Webhook URL
 **Email**: SMTP settings
 
-### 2. Configure GitLab Webhook
+### 2. Configure Git Webhook
+
+**GitLab:**
 Settings → Webhooks → Add webhook
 ```
-URL: https://your-domain.com/webhook/git
-Trigger: Push, MR, Issues, Pipeline
+URL: https://your-domain.com/api/webhook/git
+Triggers: Push, Tag, Merge Request, Issues, Comments, Pipeline, Wiki, Deployment, Release
+```
+
+**GitHub:**
+Settings → Webhooks → Add webhook
+```
+Payload URL: https://your-domain.com/api/webhook/git
+Content type: application/json
+Events: Push, Pull requests, Issues, Releases, Workflow runs
+```
+
+**Bitbucket:**
+Repository Settings → Webhooks → Add webhook
+```
+URL: https://your-domain.com/api/webhook/git
+Triggers: Push, Pull request, Pipeline, Issue
 ```
 
 ### 3. Test
@@ -42,7 +59,29 @@ docker-compose up -d
 
 **Nginx reverse proxy** (SSL with certbot):
 ```nginx
-location / { proxy_pass http://localhost:3000; }
-location /api/ { proxy_pass http://localhost:8000; }
-location /webhook/ { proxy_pass http://localhost:8000; }
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    # Frontend
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Backend API
+    location /api/ {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+After setup, secure with SSL:
+```bash
+certbot --nginx -d your-domain.com
 ```

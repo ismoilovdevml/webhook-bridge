@@ -94,6 +94,9 @@ def get_event_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
     failed_count = (
         db.query(func.count(Event.id)).filter(Event.status == "failed").scalar()
     )
+    pending_count = (
+        db.query(func.count(Event.id)).filter(Event.status == "pending").scalar()
+    )
 
     # Events by platform
     platform_stats = (
@@ -122,9 +125,10 @@ def get_event_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
     success_rate = (success_count / total_events * 100) if total_events > 0 else 0
 
     return {
-        "total_events": total_events,
-        "success_count": success_count,
-        "failed_count": failed_count,
+        "total": total_events,
+        "success": success_count,
+        "failed": failed_count,
+        "pending": pending_count,
         "success_rate": round(success_rate, 2),
         "recent_24h": recent_count,
         "by_platform": {item.platform: item.count for item in platform_stats},

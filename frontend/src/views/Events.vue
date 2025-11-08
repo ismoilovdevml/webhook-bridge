@@ -8,6 +8,26 @@
       </div>
     </div>
 
+    <!-- Statistics -->
+    <div class="grid grid-4" style="margin-bottom: 2rem;">
+      <div class="card" style="text-align: center; padding: 1.5rem;">
+        <h3 style="font-size: 2rem; margin: 0; color: #4299e1;">{{ stats.total }}</h3>
+        <p style="margin: 0.5rem 0 0; color: #718096;">Total Events</p>
+      </div>
+      <div class="card" style="text-align: center; padding: 1.5rem;">
+        <h3 style="font-size: 2rem; margin: 0; color: #48bb78;">{{ stats.success }}</h3>
+        <p style="margin: 0.5rem 0 0; color: #718096;">Success</p>
+      </div>
+      <div class="card" style="text-align: center; padding: 1.5rem;">
+        <h3 style="font-size: 2rem; margin: 0; color: #f56565;">{{ stats.failed }}</h3>
+        <p style="margin: 0.5rem 0 0; color: #718096;">Failed</p>
+      </div>
+      <div class="card" style="text-align: center; padding: 1.5rem;">
+        <h3 style="font-size: 2rem; margin: 0; color: #ed8936;">{{ stats.pending }}</h3>
+        <p style="margin: 0.5rem 0 0; color: #718096;">Pending</p>
+      </div>
+    </div>
+
     <!-- Filters -->
     <div class="card">
       <div class="grid grid-4">
@@ -33,12 +53,12 @@
 
         <div class="form-group">
           <label class="form-label">Event Type</label>
-          <input v-model="filters.event_type" @input="applyFilters" class="form-input" placeholder="push, merge_request...">
+          <input v-model="filters.event_type" @input="applyFilters" class="form-input" placeholder="e.g. push, merge_request, pipeline, issue">
         </div>
 
         <div class="form-group">
           <label class="form-label">Project</label>
-          <input v-model="filters.project" @input="applyFilters" class="form-input" placeholder="Search project...">
+          <input v-model="filters.project" @input="applyFilters" class="form-input" placeholder="e.g. myorg/myproject">
         </div>
       </div>
     </div>
@@ -99,6 +119,7 @@ const filters = ref({
 const events = computed(() => eventsStore.events)
 const loading = computed(() => eventsStore.loading)
 const error = computed(() => eventsStore.error)
+const stats = computed(() => eventsStore.stats || { total: 0, success: 0, failed: 0, pending: 0 })
 
 onMounted(() => {
   eventsStore.fetchEvents()
@@ -141,6 +162,15 @@ function getStatusClass(status) {
 
 function formatDate(dateStr) {
   const date = new Date(dateStr)
-  return date.toLocaleString()
+  // Format: YYYY-MM-DD HH:MM:SS (24-hour)
+  return date.toLocaleString('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(',', '')
 }
 </script>

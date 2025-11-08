@@ -23,6 +23,8 @@ class GitLabParser(BaseParser):
             return self._parse_merge_request(payload)
         elif object_kind == "pipeline":
             return self._parse_pipeline(payload)
+        elif object_kind == "build":  # Job events
+            return self._parse_job(payload)
         elif object_kind == "issue":
             return self._parse_issue(payload)
         elif object_kind == "note":
@@ -31,6 +33,16 @@ class GitLabParser(BaseParser):
             return self._parse_tag_push(payload)
         elif object_kind == "wiki_page":
             return self._parse_wiki(payload)
+        elif object_kind == "deployment":
+            return self._parse_deployment(payload)
+        elif object_kind == "release":
+            return self._parse_release(payload)
+        elif object_kind == "feature_flag":
+            return self._parse_feature_flag(payload)
+        elif object_kind == "emoji":
+            return self._parse_emoji(payload)
+        elif object_kind == "access_token":
+            return self._parse_access_token(payload)
         else:
             return self._parse_unknown(payload)
 
@@ -172,6 +184,124 @@ class GitLabParser(BaseParser):
             author=user.get("name", "Unknown"),
             author_username=user.get("username", ""),
             author_avatar=user.get("avatar_url", None),
+            raw_data=payload,
+        )
+
+    def _parse_deployment(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse deployment event"""
+        user = payload.get("user", {})
+        project = payload.get("project", {})
+        deployment = payload.get("deployment", {})
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="deployment",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author=user.get("name", "Unknown"),
+            author_username=user.get("username", ""),
+            author_avatar=user.get("avatar_url", None),
+            ref=deployment.get("ref", ""),
+            deployment_id=deployment.get("id"),
+            deployment_status=payload.get("status", ""),
+            deployment_environment=deployment.get("environment", ""),
+            deployment_url=deployment.get("deployable_url", ""),
+            raw_data=payload,
+        )
+
+    def _parse_release(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse release event"""
+        project = payload.get("project", {})
+        release = payload.get("release", {}) if "release" in payload else payload
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="release",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author=release.get("author", {}).get("name", "Unknown") if isinstance(release.get("author"), dict) else "Unknown",
+            author_username=release.get("author", {}).get("username", "") if isinstance(release.get("author"), dict) else "",
+            ref=release.get("tag_name", ""),
+            release_name=release.get("name", ""),
+            release_tag=release.get("tag_name", ""),
+            release_description=self._truncate(release.get("description", "")),
+            release_url=release.get("_links", {}).get("self", "") if isinstance(release.get("_links"), dict) else "",
+            raw_data=payload,
+        )
+
+    def _parse_job(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse job/build event"""
+        project = payload.get("project", {})
+        user = payload.get("user", {})
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="job",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author=user.get("name", "Unknown"),
+            author_username=user.get("username", ""),
+            ref=payload.get("ref", ""),
+            job_id=payload.get("build_id"),
+            job_name=payload.get("build_name", ""),
+            job_stage=payload.get("build_stage", ""),
+            job_status=payload.get("build_status", ""),
+            pipeline_id=payload.get("pipeline_id"),
+            raw_data=payload,
+        )
+
+    def _parse_feature_flag(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse feature flag event"""
+        project = payload.get("project", {})
+        user = payload.get("user", {})
+        flag = payload.get("object_attributes", {})
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="feature_flag",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author=user.get("name", "Unknown"),
+            author_username=user.get("username", ""),
+            feature_flag_name=flag.get("name", ""),
+            feature_flag_description=self._truncate(flag.get("description", "")),
+            feature_flag_active=flag.get("active", False),
+            raw_data=payload,
+        )
+
+    def _parse_emoji(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse emoji event"""
+        project = payload.get("project", {})
+        user = payload.get("user", {})
+        emoji = payload.get("object_attributes", {})
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="emoji",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author=user.get("name", "Unknown"),
+            author_username=user.get("username", ""),
+            emoji_name=emoji.get("name", ""),
+            emoji_action=emoji.get("action", ""),
+            emoji_awardable_type=emoji.get("awardable_type", ""),
+            raw_data=payload,
+        )
+
+    def _parse_access_token(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse access token event"""
+        project = payload.get("project", {})
+        token = payload.get("object_attributes", {})
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="access_token",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author="System",
+            author_username="",
+            token_name=token.get("name", ""),
+            token_expires_at=token.get("expires_at", ""),
             raw_data=payload,
         )
 

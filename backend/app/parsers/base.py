@@ -50,6 +50,38 @@ class ParsedEvent(BaseModel):
     comment_body: Optional[str] = None
     comment_url: Optional[str] = None
 
+    # Deployment
+    deployment_id: Optional[int] = None
+    deployment_status: Optional[str] = None
+    deployment_environment: Optional[str] = None
+    deployment_url: Optional[str] = None
+
+    # Release
+    release_name: Optional[str] = None
+    release_tag: Optional[str] = None
+    release_description: Optional[str] = None
+    release_url: Optional[str] = None
+
+    # Job/Build
+    job_id: Optional[int] = None
+    job_name: Optional[str] = None
+    job_stage: Optional[str] = None
+    job_status: Optional[str] = None
+
+    # Feature Flag
+    feature_flag_name: Optional[str] = None
+    feature_flag_description: Optional[str] = None
+    feature_flag_active: Optional[bool] = None
+
+    # Emoji
+    emoji_name: Optional[str] = None
+    emoji_action: Optional[str] = None
+    emoji_awardable_type: Optional[str] = None
+
+    # Access Token
+    token_name: Optional[str] = None
+    token_expires_at: Optional[str] = None
+
     # Raw data for advanced usage
     raw_data: Dict[str, Any] = {}
 

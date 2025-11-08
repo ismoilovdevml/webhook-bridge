@@ -37,6 +37,7 @@ class BaseFormatter(ABC):
             "merge_request": "🔀",
             "pipeline": "🔧",
             "workflow_run": "🔧",
+            "job": "⚙️",
             "issues": "🐛",
             "issue": "🐛",
             "comment": "💬",
@@ -44,6 +45,10 @@ class BaseFormatter(ABC):
             "tag_push": "🏷️",
             "release": "🚀",
             "wiki": "📝",
+            "deployment": "🚢",
+            "feature_flag": "🚩",
+            "emoji": "😀",
+            "access_token": "🔑",
         }
         return emoji_map.get(event_type, "📋")
 
@@ -112,6 +117,10 @@ class BaseFormatter(ABC):
             and event.pipeline_url
         ):
             return event.pipeline_url
+        elif event.event_type == "deployment" and event.deployment_url:
+            return event.deployment_url
+        elif event.event_type == "release" and event.release_url:
+            return event.release_url
         elif event.comment_url:
             return event.comment_url
         else:
