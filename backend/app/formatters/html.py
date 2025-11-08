@@ -219,7 +219,7 @@ class HTMLFormatter(BaseFormatter):
 
         elif event.event_type == "wiki":
             lines.append("")
-            lines.append(f"<b>📝 Wiki Page Updated</b>")
+            lines.append("<b>📝 Wiki Page Updated</b>")
             if event.ref:
                 lines.append(f"<b>📄 Page:</b> {self._escape_html(event.ref)}")
 
