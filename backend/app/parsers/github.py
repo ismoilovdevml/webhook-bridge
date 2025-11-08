@@ -24,6 +24,8 @@ class GitHubParser(BaseParser):
             return self._parse_pull_request(payload)
         elif event_type == "workflow_run" or event_type == "check_run":
             return self._parse_workflow(payload)
+        elif event_type == "workflow_job":
+            return self._parse_workflow_job(payload)
         elif event_type == "issues":
             return self._parse_issue(payload)
         elif (
@@ -34,6 +36,8 @@ class GitHubParser(BaseParser):
             return self._parse_tag(payload)
         elif event_type == "release":
             return self._parse_release(payload)
+        elif event_type == "deployment" or event_type == "deployment_status":
+            return self._parse_deployment(payload)
         else:
             return self._parse_unknown(payload)
 
@@ -102,6 +106,34 @@ class GitHubParser(BaseParser):
             pipeline_id=workflow.get("id"),
             pipeline_status=status,
             pipeline_url=workflow.get("html_url", ""),
+            raw_data=payload,
+        )
+
+    def _parse_workflow_job(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse GitHub Actions workflow job event"""
+        repository = payload.get("repository", {})
+        sender = payload.get("sender", {})
+        job = payload.get("workflow_job", {})
+
+        # Map GitHub job status to our standard status
+        status = job.get("conclusion") or job.get("status", "")
+        if status == "queued":
+            status = "pending"
+
+        return ParsedEvent(
+            platform="github",
+            event_type="job",
+            project=repository.get("full_name", ""),
+            project_url=repository.get("html_url", ""),
+            author=sender.get("login", "Unknown"),
+            author_username=sender.get("login", ""),
+            author_avatar=sender.get("avatar_url", None),
+            ref=job.get("head_branch", ""),
+            job_id=job.get("id"),
+            job_name=job.get("name", ""),
+            job_status=status,
+            pipeline_id=job.get("run_id"),
+            pipeline_url=job.get("html_url", ""),
             raw_data=payload,
         )
 
@@ -178,7 +210,41 @@ class GitHubParser(BaseParser):
             author=sender.get("login", "Unknown"),
             author_username=sender.get("login", ""),
             author_avatar=sender.get("avatar_url", None),
-            ref=release.get("tag_name", ""),
+            release_tag=release.get("tag_name", ""),
+            release_name=release.get("name", ""),
+            release_description=self._truncate(release.get("body", "")),
+            release_url=release.get("html_url", ""),
+            raw_data=payload,
+        )
+
+    def _parse_deployment(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse deployment event"""
+        repository = payload.get("repository", {})
+        sender = payload.get("sender", {})
+        deployment = payload.get("deployment", {})
+        deployment_status = payload.get("deployment_status", {})
+
+        # Get status from deployment_status if available, else from deployment
+        status = (
+            deployment_status.get("state")
+            or deployment.get("status")
+            or "pending"
+        )
+
+        return ParsedEvent(
+            platform="github",
+            event_type="deployment",
+            project=repository.get("full_name", ""),
+            project_url=repository.get("html_url", ""),
+            author=sender.get("login", "Unknown"),
+            author_username=sender.get("login", ""),
+            author_avatar=sender.get("avatar_url", None),
+            ref=deployment.get("ref", ""),
+            deployment_id=deployment.get("id"),
+            deployment_environment=deployment.get("environment", ""),
+            deployment_status=status,
+            deployment_url=deployment_status.get("target_url")
+            or deployment.get("url", ""),
             raw_data=payload,
         )
 
