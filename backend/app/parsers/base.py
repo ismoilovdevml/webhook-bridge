@@ -142,6 +142,14 @@ class ParsedEvent(BaseModel):
     sponsor_tier: Optional[str] = None
     sponsor_action: Optional[str] = None
 
+    # Milestone
+    milestone_id: Optional[int] = None
+    milestone_title: Optional[str] = None
+    milestone_description: Optional[str] = None
+    milestone_state: Optional[str] = None
+    milestone_due_date: Optional[str] = None
+    milestone_action: Optional[str] = None
+
     # Raw data for advanced usage
     raw_data: Dict[str, Any] = {}
 

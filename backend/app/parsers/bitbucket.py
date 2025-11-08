@@ -30,6 +30,16 @@ class BitbucketParser(BaseParser):
             return self._parse_issue(payload, event_key)
         elif "pipeline" in event_key or "build_status" in event_key:
             return self._parse_pipeline(payload)
+        elif event_key == "repo:fork":
+            return self._parse_fork(payload)
+        elif event_key == "repo:updated":
+            return self._parse_repo_updated(payload)
+        elif event_key == "repo:transfer":
+            return self._parse_repo_transfer(payload)
+        elif event_key == "repo:deleted":
+            return self._parse_repo_deleted(payload)
+        elif event_key == "repo:commit_comment_created":
+            return self._parse_commit_comment(payload)
         else:
             return self._parse_unknown(payload)
 
@@ -80,10 +90,26 @@ class BitbucketParser(BaseParser):
             action = "updated"
         elif "approved" in event_key:
             action = "approved"
-        elif "merged" in event_key:
+        elif "unapproved" in event_key:
+            action = "unapproved"
+        elif "merged" in event_key or "fulfilled" in event_key:
             action = "merged"
         elif "declined" in event_key or "rejected" in event_key:
             action = "closed"
+        elif "changes_request_created" in event_key:
+            action = "changes_requested"
+        elif "changes_request_removed" in event_key:
+            action = "changes_request_removed"
+        elif "comment_created" in event_key:
+            action = "comment_created"
+        elif "comment_updated" in event_key:
+            action = "comment_updated"
+        elif "comment_deleted" in event_key:
+            action = "comment_deleted"
+        elif "comment_resolved" in event_key:
+            action = "comment_resolved"
+        elif "comment_reopened" in event_key:
+            action = "comment_reopened"
 
         return ParsedEvent(
             platform="bitbucket",
@@ -180,6 +206,100 @@ class BitbucketParser(BaseParser):
             pipeline_status=status,
             pipeline_url=url,
             pipeline_duration=duration,
+            raw_data=payload,
+        )
+
+    def _parse_fork(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse fork event"""
+        repository = payload.get("repository", {})
+        actor = payload.get("actor", {})
+        fork = payload.get("fork", {})
+
+        return ParsedEvent(
+            platform="bitbucket",
+            event_type="fork",
+            project=repository.get("full_name", ""),
+            project_url=repository.get("links", {}).get("html", {}).get("href", ""),
+            author=actor.get("display_name", "Unknown"),
+            author_username=actor.get("username", ""),
+            author_avatar=actor.get("links", {}).get("avatar", {}).get("href", None),
+            forked_repo_url=fork.get("links", {}).get("html", {}).get("href", ""),
+            raw_data=payload,
+        )
+
+    def _parse_repo_updated(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse repository updated event"""
+        repository = payload.get("repository", {})
+        actor = payload.get("actor", {})
+        changes = payload.get("changes", {})
+
+        return ParsedEvent(
+            platform="bitbucket",
+            event_type="repository",
+            project=repository.get("full_name", ""),
+            project_url=repository.get("links", {}).get("html", {}).get("href", ""),
+            author=actor.get("display_name", "Unknown"),
+            author_username=actor.get("username", ""),
+            author_avatar=actor.get("links", {}).get("avatar", {}).get("href", None),
+            repo_action="updated",
+            repo_description=repository.get("description", ""),
+            raw_data=payload,
+        )
+
+    def _parse_repo_transfer(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse repository transfer event"""
+        repository = payload.get("repository", {})
+        actor = payload.get("actor", {})
+        previous_workspace = payload.get("previous_workspace", {})
+
+        return ParsedEvent(
+            platform="bitbucket",
+            event_type="repository",
+            project=repository.get("full_name", ""),
+            project_url=repository.get("links", {}).get("html", {}).get("href", ""),
+            author=actor.get("display_name", "Unknown"),
+            author_username=actor.get("username", ""),
+            author_avatar=actor.get("links", {}).get("avatar", {}).get("href", None),
+            repo_action="transferred",
+            raw_data=payload,
+        )
+
+    def _parse_repo_deleted(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse repository deleted event"""
+        repository = payload.get("repository", {})
+        actor = payload.get("actor", {})
+
+        return ParsedEvent(
+            platform="bitbucket",
+            event_type="repository",
+            project=repository.get("full_name", ""),
+            project_url=repository.get("links", {}).get("html", {}).get("href", ""),
+            author=actor.get("display_name", "Unknown"),
+            author_username=actor.get("username", ""),
+            author_avatar=actor.get("links", {}).get("avatar", {}).get("href", None),
+            repo_action="deleted",
+            raw_data=payload,
+        )
+
+    def _parse_commit_comment(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse commit comment created event"""
+        repository = payload.get("repository", {})
+        actor = payload.get("actor", {})
+        comment = payload.get("comment", {})
+        commit = payload.get("commit", {})
+
+        return ParsedEvent(
+            platform="bitbucket",
+            event_type="commit_comment",
+            project=repository.get("full_name", ""),
+            project_url=repository.get("links", {}).get("html", {}).get("href", ""),
+            author=actor.get("display_name", "Unknown"),
+            author_username=actor.get("username", ""),
+            author_avatar=actor.get("links", {}).get("avatar", {}).get("href", None),
+            comment_body=self._truncate(
+                comment.get("content", {}).get("raw", ""), 200
+            ),
+            comment_url=comment.get("links", {}).get("html", {}).get("href", ""),
             raw_data=payload,
         )
 

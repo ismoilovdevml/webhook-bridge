@@ -486,6 +486,43 @@ class HTMLFormatter(BaseFormatter):
             lines.append("")
             lines.append(f"<b>🗑️ Tag Deleted:</b> <code>{tag}</code>")
 
+        elif event.event_type == "milestone":
+            title = self._escape_html(event.milestone_title or "N/A")
+            state = event.milestone_state or "active"
+            action = event.milestone_action or "created"
+            state_emoji = self._get_status_emoji(state)
+
+            lines.append("")
+            if event.milestone_id:
+                lines.append(f"<b>🎯 Milestone:</b> {title}")
+            lines.append(f"<b>📊 Action:</b> {action.title()}")
+            lines.append(f"<b>{state_emoji} State:</b> {state.title()}")
+            if event.milestone_due_date:
+                lines.append(f"<b>📅 Due Date:</b> {event.milestone_due_date}")
+            if event.milestone_description:
+                desc = self._escape_html(event.milestone_description)
+                lines.append(f"<b>📝 Description:</b> {desc}")
+
+        elif event.event_type == "vulnerability":
+            severity = event.alert_severity or "unknown"
+            if severity in ["critical", "high"]:
+                severity_emoji = "🔴"
+            elif severity == "medium":
+                severity_emoji = "🟡"
+            else:
+                severity_emoji = "🟢"
+            state = event.alert_state or "open"
+
+            lines.append("")
+            if event.alert_id and event.alert_url:
+                vuln_link = f'<a href="{event.alert_url}">#{event.alert_id}</a>'
+                lines.append(f"<b>🛡️ Vulnerability:</b> {vuln_link}")
+            lines.append(f"<b>{severity_emoji} Severity:</b> {severity.upper()}")
+            lines.append(f"<b>📊 State:</b> {state.title()}")
+            if event.alert_description:
+                desc = self._escape_html(event.alert_description)
+                lines.append(f"<b>📝 Description:</b> {desc}")
+
         # Add footer with "View Details" link
         url = self._get_event_url(event)
         if url:

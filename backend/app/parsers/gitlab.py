@@ -43,6 +43,20 @@ class GitLabParser(BaseParser):
             return self._parse_emoji(payload)
         elif object_kind == "access_token":
             return self._parse_access_token(payload)
+        elif event_name in [
+            "user_add_to_group", "user_update_for_group",
+            "user_remove_from_group", "user_access_request_to_group",
+            "user_access_request_denied_for_group"
+        ]:
+            return self._parse_member(payload)
+        elif event_name in ["project_create", "project_destroy"]:
+            return self._parse_project_event(payload)
+        elif event_name in ["subgroup_create", "subgroup_destroy"]:
+            return self._parse_subgroup(payload)
+        elif object_kind == "milestone":
+            return self._parse_milestone(payload)
+        elif object_kind == "vulnerability":
+            return self._parse_vulnerability(payload)
         else:
             return self._parse_unknown(payload)
 
@@ -319,6 +333,119 @@ class GitLabParser(BaseParser):
             author_username="",
             token_name=token.get("name", ""),
             token_expires_at=token.get("expires_at", ""),
+            raw_data=payload,
+        )
+
+    def _parse_member(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse group member event"""
+        event_name = payload.get("event_name", "")
+
+        # Determine action from event_name
+        if "add" in event_name:
+            action = "added"
+        elif "update" in event_name:
+            action = "updated"
+        elif "remove" in event_name:
+            action = "removed"
+        elif "request" in event_name and "denied" not in event_name:
+            action = "requested"
+        elif "denied" in event_name:
+            action = "denied"
+        else:
+            action = event_name
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="member",
+            project=payload.get("group_path", "Group"),
+            project_url=f"https://gitlab.com/{payload.get('group_path', '')}",
+            author=payload.get("user_name", "Unknown"),
+            author_username=payload.get("user_username", ""),
+            member_username=payload.get("user_username", ""),
+            member_role=payload.get("group_access", ""),
+            member_action=action,
+            raw_data=payload,
+        )
+
+    def _parse_project_event(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse project create/destroy event"""
+        event_name = payload.get("event_name", "")
+        action = "created" if "create" in event_name else "deleted"
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="project",
+            project=payload.get("path_with_namespace", ""),
+            project_url="",
+            author=payload.get("owners", [{}])[0].get("name", "Unknown"),
+            author_username="",
+            repo_action=action,
+            repo_visibility=payload.get("project_visibility", ""),
+            raw_data=payload,
+        )
+
+    def _parse_subgroup(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse subgroup create/destroy event"""
+        event_name = payload.get("event_name", "")
+        action = "created" if "create" in event_name else "deleted"
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="subgroup",
+            project=payload.get("full_path", ""),
+            project_url="",
+            author="System",
+            author_username="",
+            team_name=payload.get("name", ""),
+            team_action=action,
+            raw_data=payload,
+        )
+
+    def _parse_milestone(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse milestone event"""
+        user = payload.get("user", {})
+        project = payload.get("project", {})
+        milestone = payload.get("object_attributes", {})
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="milestone",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author=user.get("name", "Unknown"),
+            author_username=user.get("username", ""),
+            author_avatar=user.get("avatar_url", None),
+            milestone_id=milestone.get("id"),
+            milestone_title=milestone.get("title", ""),
+            milestone_description=self._truncate(
+                milestone.get("description", "")
+            ),
+            milestone_state=milestone.get("state", ""),
+            milestone_due_date=milestone.get("due_date", ""),
+            milestone_action=payload.get("action", ""),
+            raw_data=payload,
+        )
+
+    def _parse_vulnerability(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse vulnerability event"""
+        vulnerability = payload.get("object_attributes", {})
+
+        # Map severity from GitLab to standard levels
+        severity = vulnerability.get("severity", "unknown").lower()
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="vulnerability",
+            project=vulnerability.get("project_id", ""),
+            project_url="",
+            author="Security Scanner",
+            author_username="",
+            alert_id=vulnerability.get("id"),
+            alert_type="vulnerability",
+            alert_severity=severity,
+            alert_state=vulnerability.get("state", ""),
+            alert_url=vulnerability.get("url", ""),
+            alert_description=self._truncate(vulnerability.get("title", "")),
             raw_data=payload,
         )
 
