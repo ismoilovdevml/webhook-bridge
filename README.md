@@ -1,9 +1,15 @@
 # Webhook Bridge
 
+[![CI/CD](https://github.com/USERNAME/webhook-bridge/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/USERNAME/webhook-bridge/actions/workflows/ci-cd.yml)
+
 Git webhook → Telegram/Slack/Discord/Mattermost/Email
+
+**Supported Platforms:** GitLab, GitHub, Bitbucket
+**Notification Channels:** Telegram, Slack, Discord, Mattermost, Email
 
 ## Quick Start
 
+### Local Development
 ```bash
 docker-compose up -d
 
