@@ -70,13 +70,13 @@ class GitHubParser(BaseParser):
             return self._parse_member(payload)
         elif event_type == "membership":
             return self._parse_membership(payload)
-        elif event_type == "project" or event_type == "project_card" or event_type == "project_column":
+        elif event_type in ["project", "project_card", "project_column"]:
             return self._parse_project(payload, event_type)
-        elif event_type == "projects_v2" or event_type == "projects_v2_item":
+        elif event_type in ["projects_v2", "projects_v2_item"]:
             return self._parse_projects_v2(payload, event_type)
         elif event_type == "organization":
             return self._parse_organization(payload)
-        elif event_type == "team" or event_type == "team_add":
+        elif event_type in ["team", "team_add"]:
             return self._parse_team(payload, event_type)
         elif event_type == "sponsorship":
             return self._parse_sponsorship(payload)
