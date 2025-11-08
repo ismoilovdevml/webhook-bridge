@@ -97,7 +97,7 @@ async def process_and_send(
 
 
 @router.post(
-    "/webhook/git",
+    "/webhook",
     summary="Receive Git Webhook",
     description="""
     Universal webhook receiver for GitLab, GitHub, and Bitbucket.

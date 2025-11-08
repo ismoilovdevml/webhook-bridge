@@ -82,6 +82,66 @@ class ParsedEvent(BaseModel):
     token_name: Optional[str] = None
     token_expires_at: Optional[str] = None
 
+    # Repository actions (fork, star, watch)
+    star_count: Optional[int] = None
+    star_action: Optional[str] = None  # "created" or "deleted"
+    watch_action: Optional[str] = None  # "started"
+    fork_count: Optional[int] = None
+    forked_repo_url: Optional[str] = None
+
+    # Wiki (gollum)
+    wiki_pages: Optional[List[Dict[str, Any]]] = None
+
+    # Discussion
+    discussion_id: Optional[int] = None
+    discussion_title: Optional[str] = None
+    discussion_body: Optional[str] = None
+    discussion_url: Optional[str] = None
+    discussion_action: Optional[str] = None
+    discussion_category: Optional[str] = None
+
+    # Security alerts
+    alert_id: Optional[int] = None
+    alert_type: Optional[str] = None  # "code_scanning", "secret_scanning", "dependabot"
+    alert_severity: Optional[str] = None
+    alert_state: Optional[str] = None
+    alert_url: Optional[str] = None
+    alert_description: Optional[str] = None
+
+    # Branch protection
+    rule_id: Optional[int] = None
+    rule_name: Optional[str] = None
+    rule_enforcement: Optional[str] = None
+
+    # Repository management
+    repo_action: Optional[str] = None  # "created", "deleted", "archived", "publicized", etc.
+    repo_description: Optional[str] = None
+    repo_visibility: Optional[str] = None
+
+    # Member/Team
+    member_username: Optional[str] = None
+    member_role: Optional[str] = None
+    member_action: Optional[str] = None
+    team_name: Optional[str] = None
+    team_action: Optional[str] = None
+
+    # Projects
+    project_id: Optional[int] = None
+    project_name: Optional[str] = None
+    project_action: Optional[str] = None
+    project_url: Optional[str] = None
+
+    # Check suite
+    check_suite_id: Optional[int] = None
+    check_suite_status: Optional[str] = None
+    check_suite_conclusion: Optional[str] = None
+    check_suite_url: Optional[str] = None
+
+    # Sponsorship
+    sponsor_username: Optional[str] = None
+    sponsor_tier: Optional[str] = None
+    sponsor_action: Optional[str] = None
+
     # Raw data for advanced usage
     raw_data: Dict[str, Any] = {}
 

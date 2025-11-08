@@ -270,6 +270,192 @@ class HTMLFormatter(BaseFormatter):
                 ]
             )
 
+        elif event.event_type == "fork":
+            lines.append("")
+            lines.append(f"<b>🍴 Fork Count:</b> {event.fork_count or 'N/A'}")
+            if event.forked_repo_url:
+                lines.append(f'<b>🔗 Forked Repo:</b> <a href="{event.forked_repo_url}">View fork</a>')
+
+        elif event.event_type == "star":
+            action = event.star_action or "starred"
+            action_emoji = "⭐" if action == "created" else "✖️"
+            lines.append("")
+            lines.append(f"<b>{action_emoji} Action:</b> {action.title()}")
+            lines.append(f"<b>⭐ Star Count:</b> {event.star_count or 'N/A'}")
+
+        elif event.event_type == "watch":
+            lines.append("")
+            lines.append(f"<b>👀 Action:</b> Started watching")
+
+        elif event.event_type == "discussion":
+            action = event.discussion_action or "opened"
+            action_emoji = self._get_status_emoji(action)
+            title = self._escape_html(event.discussion_title or "N/A")
+            category = self._escape_html(event.discussion_category or "General")
+
+            lines.append("")
+            if event.discussion_id and event.discussion_url:
+                lines.append(f'<b>🔗 Discussion:</b> <a href="{event.discussion_url}">#{event.discussion_id}</a>')
+            lines.append(f"<b>📊 Action:</b> {action_emoji} {action.title()}")
+            lines.append(f"<b>📋 Title:</b> {title}")
+            lines.append(f"<b>📂 Category:</b> {category}")
+            if event.discussion_body:
+                desc = self._escape_html(self._truncate(event.discussion_body, 100))
+                lines.append(f"<b>📝 Description:</b> {desc}")
+
+        elif event.event_type == "discussion_comment":
+            title = self._escape_html(event.discussion_title or "N/A")
+            comment_body = self._escape_html(self._truncate(event.comment_body or "", 200))
+
+            lines.append("")
+            if event.discussion_id and event.discussion_url:
+                lines.append(f'<b>💬 On Discussion:</b> <a href="{event.discussion_url}">#{event.discussion_id} - {title}</a>')
+            lines.append(f"<b>📝 Comment:</b> {comment_body}")
+
+        elif event.event_type == "commit_comment":
+            comment_body = self._escape_html(self._truncate(event.comment_body or "", 200))
+            lines.append("")
+            lines.append(f"<b>💬 Comment on Commit</b>")
+            lines.append(f"<b>📝 Message:</b> {comment_body}")
+
+        elif event.event_type == "code_scanning_alert":
+            severity = event.alert_severity or "unknown"
+            severity_emoji = "🔴" if severity in ["critical", "high"] else "🟡" if severity == "medium" else "🟢"
+            state = event.alert_state or "open"
+
+            lines.append("")
+            if event.alert_id and event.alert_url:
+                lines.append(f'<b>🔒 Alert:</b> <a href="{event.alert_url}">#{event.alert_id}</a>')
+            lines.append(f"<b>{severity_emoji} Severity:</b> {severity.upper()}")
+            lines.append(f"<b>📊 State:</b> {state.title()}")
+            if event.alert_description:
+                lines.append(f"<b>📝 Description:</b> {self._escape_html(event.alert_description)}")
+
+        elif event.event_type == "secret_scanning_alert":
+            state = event.alert_state or "open"
+
+            lines.append("")
+            if event.alert_id and event.alert_url:
+                lines.append(f'<b>🔐 Alert:</b> <a href="{event.alert_url}">#{event.alert_id}</a>')
+            lines.append(f"<b>📊 State:</b> {state.title()}")
+            if event.alert_description:
+                lines.append(f"<b>📝 Details:</b> {self._escape_html(event.alert_description)}")
+
+        elif event.event_type == "dependabot_alert":
+            severity = event.alert_severity or "unknown"
+            severity_emoji = "🔴" if severity in ["critical", "high"] else "🟡" if severity == "medium" else "🟢"
+            state = event.alert_state or "open"
+
+            lines.append("")
+            if event.alert_id and event.alert_url:
+                lines.append(f'<b>🤖 Alert:</b> <a href="{event.alert_url}">#{event.alert_id}</a>')
+            lines.append(f"<b>{severity_emoji} Severity:</b> {severity.upper()}")
+            lines.append(f"<b>📊 State:</b> {state.title()}")
+            if event.alert_description:
+                lines.append(f"<b>📦 Details:</b> {self._escape_html(event.alert_description)}")
+
+        elif event.event_type == "branch_protection_rule":
+            rule_name = self._escape_html(event.rule_name or "N/A")
+            action = event.rule_enforcement or "updated"
+
+            lines.append("")
+            lines.append(f"<b>🛡️ Rule:</b> <code>{rule_name}</code>")
+            lines.append(f"<b>📊 Action:</b> {action.title()}")
+
+        elif event.event_type == "repository":
+            action = event.repo_action or "updated"
+            visibility = event.repo_visibility or "private"
+
+            lines.append("")
+            lines.append(f"<b>📦 Action:</b> {action.title()}")
+            lines.append(f"<b>👁️ Visibility:</b> {visibility.title()}")
+            if event.repo_description:
+                lines.append(f"<b>📝 Description:</b> {self._escape_html(event.repo_description)}")
+
+        elif event.event_type == "public":
+            lines.append("")
+            lines.append(f"<b>🌍 Repository is now PUBLIC</b>")
+            lines.append(f"<b>👁️ Visibility:</b> Public")
+
+        elif event.event_type == "member":
+            member = self._escape_html(event.member_username or "Unknown")
+            action = event.member_action or "added"
+            action_emoji = "➕" if action == "added" else "➖"
+
+            lines.append("")
+            lines.append(f"<b>👥 Member:</b> {member}")
+            lines.append(f"<b>{action_emoji} Action:</b> {action.title()}")
+
+        elif event.event_type == "membership":
+            member = self._escape_html(event.member_username or "Unknown")
+            team = self._escape_html(event.team_name or "Unknown")
+            action = event.member_action or "added"
+            action_emoji = "➕" if action == "added" else "➖"
+
+            lines.append("")
+            lines.append(f"<b>👥 Member:</b> {member}")
+            lines.append(f"<b>👨‍👩‍👧‍👦 Team:</b> {team}")
+            lines.append(f"<b>{action_emoji} Action:</b> {action.title()}")
+
+        elif event.event_type in ["project", "project_card", "project_column", "projects_v2", "projects_v2_item"]:
+            project_name = self._escape_html(event.project_name or "N/A")
+            action = event.project_action or "updated"
+
+            lines.append("")
+            lines.append(f"<b>📋 Project:</b> {project_name}")
+            lines.append(f"<b>📊 Action:</b> {action.title()}")
+
+        elif event.event_type == "organization":
+            action = event.repo_action or "updated"
+            lines.append("")
+            lines.append(f"<b>🏢 Action:</b> {action.title()}")
+
+        elif event.event_type in ["team", "team_add"]:
+            team = self._escape_html(event.team_name or "Unknown")
+            action = event.team_action or "updated"
+
+            lines.append("")
+            lines.append(f"<b>👨‍👩‍👧‍👦 Team:</b> {team}")
+            lines.append(f"<b>📊 Action:</b> {action.title()}")
+
+        elif event.event_type == "sponsorship":
+            sponsor = self._escape_html(event.sponsor_username or "Unknown")
+            tier = self._escape_html(event.sponsor_tier or "N/A")
+            action = event.sponsor_action or "created"
+            action_emoji = "💖" if action == "created" else "❌"
+
+            lines.append("")
+            lines.append(f"<b>💝 Sponsor:</b> {sponsor}")
+            lines.append(f"<b>🎯 Tier:</b> {tier}")
+            lines.append(f"<b>{action_emoji} Action:</b> {action.title()}")
+
+        elif event.event_type == "check_suite":
+            status = event.check_suite_status or "unknown"
+            conclusion = event.check_suite_conclusion or "pending"
+            status_emoji = self._get_status_emoji(conclusion or status)
+
+            lines.append("")
+            if event.check_suite_id:
+                lines.append(f"<b>✅ Check Suite:</b> #{event.check_suite_id}")
+            lines.append(f"<b>📊 Status:</b> {status_emoji} {status.title()}")
+            if conclusion:
+                lines.append(f"<b>🎯 Conclusion:</b> {conclusion.title()}")
+
+        elif event.event_type == "branch_create":
+            branch = self._escape_html(event.ref or "N/A")
+            lines.append("")
+            lines.append(f"<b>🌿 Branch Created:</b> <code>{branch}</code>")
+
+        elif event.event_type == "branch_delete":
+            branch = self._escape_html(event.ref or "N/A")
+            lines.append("")
+            lines.append(f"<b>🗑️ Branch Deleted:</b> <code>{branch}</code>")
+
+        elif event.event_type == "tag_delete":
+            tag = self._escape_html(event.ref or "N/A")
+            lines.append("")
+            lines.append(f"<b>🗑️ Tag Deleted:</b> <code>{tag}</code>")
+
         # Add footer with "View Details" link
         url = self._get_event_url(event)
         if url:

@@ -1,7 +1,5 @@
 # Webhook Bridge
 
-[![CI/CD](https://github.com/USERNAME/webhook-bridge/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/USERNAME/webhook-bridge/actions/workflows/ci-cd.yml)
-
 Git webhook → Telegram/Slack/Discord/Mattermost/Email
 
 **Supported Platforms:** GitLab, GitHub, Bitbucket
@@ -31,14 +29,14 @@ Dashboard → Alerting → Click platform icon → Enter credentials → Test �
 **GitLab:**
 Settings → Webhooks → Add webhook
 ```
-URL: https://your-domain.com/api/webhook/git
+URL: https://your-domain.com/api/webhook
 Triggers: Push, Tag, Merge Request, Issues, Comments, Pipeline, Wiki, Deployment, Release
 ```
 
 **GitHub:**
 Settings → Webhooks → Add webhook
 ```
-Payload URL: https://your-domain.com/api/webhook/git
+Payload URL: https://your-domain.com/api/webhook
 Content type: application/json
 Events: Push, Pull requests, Issues, Releases, Workflow runs
 ```
@@ -46,7 +44,7 @@ Events: Push, Pull requests, Issues, Releases, Workflow runs
 **Bitbucket:**
 Repository Settings → Webhooks → Add webhook
 ```
-URL: https://your-domain.com/api/webhook/git
+URL: https://your-domain.com/api/webhook
 Triggers: Push, Pull request, Pipeline, Issue
 ```
 
