@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 def init_admin_user(db: Session):
     """Create admin user if it doesn't exist."""
     # Check if any admin user exists
-    admin_exists = db.query(User).filter(User.is_admin == True).first()
+    admin_exists = db.query(User).filter(User.is_admin.is_(True)).first()
 
     if admin_exists:
         logger.info("Admin user already exists")
