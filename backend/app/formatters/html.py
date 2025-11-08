@@ -21,9 +21,20 @@ class HTMLFormatter(BaseFormatter):
         emoji = self._get_event_emoji(event.event_type)
         event_name = event.event_type.replace('_', ' ').title()
 
-        # Build message header with link to project
+        # Build message header - include status for pipeline/job events
+        if event.event_type in ["pipeline", "workflow_run"]:
+            status = event.pipeline_status or "unknown"
+            status_emoji = self._get_status_emoji(status)
+            header = f"<b>{status_emoji} Pipeline {status.upper()}</b>"
+        elif event.event_type == "job":
+            status = event.job_status or "unknown"
+            status_emoji = self._get_status_emoji(status)
+            header = f"<b>{status_emoji} Job {status.upper()}</b>"
+        else:
+            header = f"<b>{emoji} {event_name}</b>"
+
         lines = [
-            f"<b>{emoji} {event_name}</b>",
+            header,
             "",
         ]
 
@@ -85,9 +96,6 @@ class HTMLFormatter(BaseFormatter):
                 lines.append(f"<b>🌿 Merge:</b> <code>{src}</code> → <code>{tgt}</code>")
 
         elif event.event_type in ["pipeline", "workflow_run"]:
-            status = event.pipeline_status or "unknown"
-            status_emoji = self._get_status_emoji(status)
-
             lines.append("")
 
             # Pipeline ID with link
@@ -96,9 +104,6 @@ class HTMLFormatter(BaseFormatter):
                 lines.append(f"<b>🔗 Pipeline:</b> {pipeline_link}")
             elif event.pipeline_id:
                 lines.append(f"<b>🔧 Pipeline:</b> #{event.pipeline_id}")
-
-            # Status with better formatting
-            lines.append(f"<b>📊 Status:</b> {status_emoji} <b>{status.upper()}</b>")
 
             # Duration
             if event.pipeline_duration:
@@ -196,8 +201,6 @@ class HTMLFormatter(BaseFormatter):
             lines.append(f"<b>📊 Status:</b> {status_emoji} <b>{status.upper()}</b>")
 
         elif event.event_type == "job":
-            status = event.job_status or "unknown"
-            status_emoji = self._get_status_emoji(status)
             job_name = self._escape_html(event.job_name or "N/A")
             job_stage = self._escape_html(event.job_stage or "N/A")
 
@@ -206,7 +209,6 @@ class HTMLFormatter(BaseFormatter):
                 [
                     f"<b>⚙️ Job:</b> <code>{job_name}</code>",
                     f"<b>📦 Stage:</b> {job_stage}",
-                    f"<b>📊 Status:</b> {status_emoji} <b>{status.upper()}</b>",
                 ]
             )
 
