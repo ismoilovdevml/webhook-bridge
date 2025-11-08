@@ -315,8 +315,8 @@ const loadProviders = async () => {
   try {
     const response = await api.get('/providers')
     providers.value = response.data
-  } catch (error) {
-    console.error('Failed to load providers:', error)
+  } catch {
+    // Error loading providers - handled silently
   }
 }
 
@@ -324,8 +324,8 @@ const loadEvents = async () => {
   try {
     const response = await api.get('/events?limit=20')
     events.value = response.data.events || []
-  } catch (error) {
-    console.error('Failed to load events:', error)
+  } catch {
+    // Error loading events - handled silently
   }
 }
 
@@ -333,8 +333,8 @@ const loadStats = async () => {
   try {
     const response = await api.get('/dashboard/stats')
     stats.value = response.data
-  } catch (error) {
-    console.error('Failed to load stats:', error)
+  } catch {
+    // Error loading stats - handled silently
   }
 }
 
@@ -352,8 +352,8 @@ const toggleProvider = async (provider) => {
       active: !provider.active
     })
     await loadProviders()
-  } catch (error) {
-    console.error('Failed to toggle provider:', error)
+  } catch {
+    // Error toggling provider - handled silently
   }
 }
 
@@ -372,8 +372,8 @@ const createProvider = async () => {
     await api.post('/providers', newProvider.value)
     showModal.value = false
     await loadProviders()
-  } catch (error) {
-    console.error('Failed to create provider:', error)
+  } catch {
+    // Error creating provider - handled silently
   }
 }
 
@@ -382,8 +382,8 @@ const saveProvider = async () => {
     await api.put(`/providers/${selectedProvider.value.id}`, selectedProvider.value)
     selectedProvider.value = null
     await loadProviders()
-  } catch (error) {
-    console.error('Failed to save provider:', error)
+  } catch {
+    // Error saving provider - handled silently
   }
 }
 
@@ -393,8 +393,8 @@ const deleteProvider = async () => {
     await api.delete(`/providers/${selectedProvider.value.id}`)
     selectedProvider.value = null
     await loadProviders()
-  } catch (error) {
-    console.error('Failed to delete provider:', error)
+  } catch {
+    // Error deleting provider - handled silently
   }
 }
 

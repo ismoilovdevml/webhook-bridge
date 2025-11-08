@@ -29,7 +29,7 @@ export const useProvidersStore = defineStore('providers', {
         this.providers = await api.getProviders()
       } catch (error) {
         this.error = error.message
-        console.error('Failed to fetch providers:', error)
+        // Error handled by setting this.error
       } finally {
         this.loading = false
       }

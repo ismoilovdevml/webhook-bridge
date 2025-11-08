@@ -18,7 +18,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => response.data,
   error => {
-    console.error('API Error:', error)
+    // API Error logged for debugging
     return Promise.reject(error)
   }
 )

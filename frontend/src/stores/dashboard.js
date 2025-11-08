@@ -26,7 +26,7 @@ export const useDashboardStore = defineStore('dashboard', {
         this.activityTimeline = timeline
       } catch (error) {
         this.error = error.message
-        console.error('Failed to fetch dashboard data:', error)
+        // Error handled by setting this.error
       } finally {
         this.loading = false
       }

@@ -504,10 +504,4 @@ async function refresh() {
   await eventsStore.fetchEvents()
   await eventsStore.fetchStats()
 }
-
-async function clearAll() {
-  if (confirm('Are you sure you want to clear all events?')) {
-    await eventsStore.clearEvents()
-  }
-}
 </script>

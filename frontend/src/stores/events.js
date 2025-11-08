@@ -44,7 +44,7 @@ export const useEventsStore = defineStore('events', {
         this.events = await api.getEvents(params)
       } catch (error) {
         this.error = error.message
-        console.error('Failed to fetch events:', error)
+        // Error handled by setting this.error
       } finally {
         this.loading = false
       }
@@ -53,8 +53,8 @@ export const useEventsStore = defineStore('events', {
     async fetchStats() {
       try {
         this.stats = await api.getEventStats()
-      } catch (error) {
-        console.error('Failed to fetch stats:', error)
+      } catch {
+        // Stats fetch error - non-critical
       }
     },
 

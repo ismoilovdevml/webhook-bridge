@@ -159,7 +159,11 @@ class HTMLFormatter(BaseFormatter):
             # Add deployment ID if available
             if event.deployment_id:
                 if event.deployment_url:
-                    lines.insert(-2, f'<b>Deployment:</b> <a href="{event.deployment_url}">#{event.deployment_id}</a>')
+                    deploy_link = (
+                        f'<b>Deployment:</b> <a href="{event.deployment_url}">'
+                        f'#{event.deployment_id}</a>'
+                    )
+                    lines.insert(-2, deploy_link)
                 else:
                     lines.insert(-2, f"<b>Deployment:</b> #{event.deployment_id}")
 
@@ -216,7 +220,7 @@ class HTMLFormatter(BaseFormatter):
                 [
                     f"<b>Token:</b> {token_name}",
                     f"<b>Expires:</b> {expires_at}",
-                    f"<b>⚠️ Warning:</b> Token will expire soon!",
+                    "<b>⚠️ Warning:</b> Token will expire soon!",
                 ]
             )
 

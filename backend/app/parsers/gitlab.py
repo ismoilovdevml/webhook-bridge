@@ -214,18 +214,35 @@ class GitLabParser(BaseParser):
         project = payload.get("project", {})
         release = payload.get("release", {}) if "release" in payload else payload
 
+        # Extract author info
+        author_obj = release.get("author", {})
+        author_name = (
+            author_obj.get("name", "Unknown")
+            if isinstance(author_obj, dict)
+            else "Unknown"
+        )
+        author_user = (
+            author_obj.get("username", "")
+            if isinstance(author_obj, dict)
+            else ""
+        )
+
+        # Extract release URL
+        links = release.get("_links", {})
+        rel_url = links.get("self", "") if isinstance(links, dict) else ""
+
         return ParsedEvent(
             platform="gitlab",
             event_type="release",
             project=project.get("path_with_namespace", ""),
             project_url=project.get("web_url", ""),
-            author=release.get("author", {}).get("name", "Unknown") if isinstance(release.get("author"), dict) else "Unknown",
-            author_username=release.get("author", {}).get("username", "") if isinstance(release.get("author"), dict) else "",
+            author=author_name,
+            author_username=author_user,
             ref=release.get("tag_name", ""),
             release_name=release.get("name", ""),
             release_tag=release.get("tag_name", ""),
             release_description=self._truncate(release.get("description", "")),
-            release_url=release.get("_links", {}).get("self", "") if isinstance(release.get("_links"), dict) else "",
+            release_url=rel_url,
             raw_data=payload,
         )
 
