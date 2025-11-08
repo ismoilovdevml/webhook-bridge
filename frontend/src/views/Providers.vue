@@ -21,8 +21,33 @@
         </div>
         <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
           <button class="btn btn-secondary" @click="testProvider(provider.id)">Test</button>
+          <button class="btn btn-primary" @click="editProvider(provider)">Edit</button>
           <button class="btn btn-danger" @click="deleteProvider(provider.id)">Delete</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Edit Provider Modal -->
+    <div v-if="showEditModal && editingProvider" class="modal-overlay" @click.self="showEditModal = false">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Edit Provider</h3>
+          <button class="modal-close" @click="showEditModal = false">&times;</button>
+        </div>
+        <form @submit.prevent="updateProvider">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input v-model="editingProvider.name" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Active</label>
+            <input type="checkbox" v-model="editingProvider.active">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showEditModal = false">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update Provider</button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -80,12 +105,14 @@ import { useProvidersStore } from '../stores/providers'
 const providersStore = useProvidersStore()
 
 const showCreateModal = ref(false)
+const showEditModal = ref(false)
 const newProvider = ref({
   name: '',
   type: '',
   config: {},
   active: true
 })
+const editingProvider = ref(null)
 
 const providers = computed(() => providersStore.providers)
 const loading = computed(() => providersStore.loading)
@@ -112,6 +139,27 @@ async function testProvider(id) {
     alert(result.message)
   } catch (error) {
     alert('Test failed: ' + error.message)
+  }
+}
+
+function editProvider(provider) {
+  editingProvider.value = { ...provider }
+  showEditModal.value = true
+}
+
+async function updateProvider() {
+  try {
+    await providersStore.updateProvider(editingProvider.value.id, {
+      name: editingProvider.value.name,
+      active: editingProvider.value.active,
+      config: editingProvider.value.config,
+      filters: editingProvider.value.filters
+    })
+    showEditModal.value = false
+    editingProvider.value = null
+    alert('Provider updated successfully!')
+  } catch (error) {
+    alert('Failed to update provider: ' + error.message)
   }
 }
 

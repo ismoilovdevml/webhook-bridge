@@ -1,6 +1,6 @@
 """Event model - stores event logs"""
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Index
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -27,6 +27,14 @@ class Event(Base):
     )  # "success", "failed", "skipped"
     error_message = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    # Composite indexes for common query patterns
+    __table_args__ = (
+        Index("idx_platform_event_type", "platform", "event_type"),
+        Index("idx_status_created_at", "status", "created_at"),
+        Index("idx_project_created_at", "project", "created_at"),
+        Index("idx_provider_status", "provider_id", "status"),
+    )
 
     def __repr__(self):
         return (

@@ -24,6 +24,7 @@ class ProviderCreate(BaseModel):
     type: str
     config: Dict[str, Any]
     active: bool = True
+    filters: Dict[str, Any] | None = None
 
 
 class ProviderUpdate(BaseModel):
@@ -32,6 +33,7 @@ class ProviderUpdate(BaseModel):
     name: str | None = None
     config: Dict[str, Any] | None = None
     active: bool | None = None
+    filters: Dict[str, Any] | None = None
 
 
 class ProviderResponse(BaseModel):
@@ -41,6 +43,7 @@ class ProviderResponse(BaseModel):
     name: str
     type: str
     active: bool
+    filters: Dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -116,12 +119,18 @@ def create_provider(
             detail=f"Provider with name '{provider_data.name}' already exists",
         )
 
+    # Encrypt sensitive config fields before saving
+    encrypted_config = Provider.encrypt_config(
+        provider_data.type, provider_data.config
+    )
+
     # Create provider
     provider = Provider(
         name=provider_data.name,
         type=provider_data.type,
-        config=provider_data.config,
+        config=encrypted_config,
         active=provider_data.active,
+        filters=provider_data.filters,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
@@ -177,10 +186,16 @@ def update_provider(
             raise HTTPException(
                 status_code=400, detail=f"Invalid configuration: {str(e)}"
             )
-        provider.config = provider_data.config
+        # Encrypt sensitive config fields before saving
+        encrypted_config = Provider.encrypt_config(provider_type, provider_data.config)
+        provider.config = encrypted_config
 
     if provider_data.active is not None:
         provider.active = provider_data.active
+
+    # Update filters if provided
+    if provider_data.filters is not None:
+        provider.filters = provider_data.filters
 
     provider.updated_at = datetime.utcnow()
 

@@ -4,6 +4,8 @@ from fastapi import APIRouter, Request, HTTPException, BackgroundTasks, Depends
 from typing import Any, Dict, cast
 from datetime import datetime
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from ..database import get_db
 from ..models.provider import Provider
@@ -18,9 +20,11 @@ from ..formatters import (
 )
 from ..utils.logger import get_logger
 from ..utils.exceptions import ParserError, ProviderError, FormatterError
+from ..config import settings
 
 logger = get_logger(__name__)
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 # Formatter mapping for each provider type
@@ -43,6 +47,9 @@ async def process_and_send(
         provider_model: Provider database model
         db: Database session
     """
+    # Decrypt provider config before using
+    decrypted_config = provider_model.get_decrypted_config()
+
     event_log = Event(
         platform=parsed_event.platform,
         event_type=parsed_event.event_type,
@@ -57,7 +64,6 @@ async def process_and_send(
     try:
         # Get formatter for provider type
         provider_type = cast(str, provider_model.type)
-        provider_config = cast(Dict[Any, Any], provider_model.config)
 
         formatter = cast(BaseFormatter, FORMATTER_MAP.get(provider_type))
         if not formatter:
@@ -66,9 +72,20 @@ async def process_and_send(
         # Format message
         formatted_message = formatter.format(parsed_event)
 
-        # Get provider instance and send
-        provider = get_provider(provider_type, provider_config)
-        success = await provider.send(formatted_message)
+        # Get provider instance and send (use decrypted config)
+        provider = get_provider(provider_type, decrypted_config)
+
+        # Send with retry logic
+        from ..utils.retry import retry_with_backoff
+
+        success, result = await retry_with_backoff(
+            lambda: provider.send(formatted_message),
+            description=f"{provider_type} notification to {provider_model.name}",
+        )
+
+        # Handle result
+        if isinstance(result, Exception):
+            event_log.error_message = str(result)
 
         if success:
             event_log.status = "success"
@@ -157,13 +174,16 @@ async def process_and_send(
         },
     },
 )
+@limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")
 async def receive_webhook(
     request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Receive and process webhooks from Git platforms."""
     try:
-        # Get headers and body
+        # Get headers and raw body for signature validation
         headers = dict(request.headers)
+        body_bytes = await request.body()
+
         try:
             payload = await request.json()
         except Exception:
@@ -175,6 +195,23 @@ async def receive_webhook(
         except ValueError as e:
             logger.warning(f"Unknown webhook platform: {e}")
             raise HTTPException(status_code=400, detail=str(e))
+
+        # Validate webhook signature
+        from ..utils.webhook_signature import validate_webhook_signature
+
+        platform = "unknown"
+        if hasattr(parser, "__class__"):
+            platform = parser.__class__.__name__.replace("Parser", "").lower()
+
+        try:
+            validate_webhook_signature(platform, headers, body_bytes)
+        except HTTPException:
+            # Re-raise HTTP exceptions (401 for invalid signature)
+            raise
+        except Exception as e:
+            logger.error(f"Signature validation error: {e}")
+            # Don't fail if validation has errors, just log it
+            pass
 
         # Parse the event
         try:
@@ -188,14 +225,29 @@ async def receive_webhook(
             f"event from {parsed_event.project}"
         )
 
-        # Get all active providers
-        active_providers = db.query(Provider).filter(Provider.active.is_(True)).all()
+        # Get all active providers and filter based on event
+        all_providers = db.query(Provider).filter(Provider.active.is_(True)).all()
+
+        # Apply event filters
+        active_providers = [
+            provider
+            for provider in all_providers
+            if provider.should_notify(
+                platform=parsed_event.platform,
+                event_type=parsed_event.event_type,
+                project=parsed_event.project,
+                branch=parsed_event.ref,
+            )
+        ]
 
         if not active_providers:
-            logger.warning("No active providers configured")
+            logger.info(
+                f"No providers matched filters for {parsed_event.platform} "
+                f"{parsed_event.event_type} from {parsed_event.project}"
+            )
             return {
                 "status": "accepted",
-                "message": "Webhook received but no active providers",
+                "message": "Webhook received but no matching providers",
                 "event": {
                     "platform": parsed_event.platform,
                     "type": parsed_event.event_type,

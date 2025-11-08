@@ -148,7 +148,10 @@ jobs:
                   - ENVIRONMENT=production
                   - LOG_LEVEL=INFO
                   - DATABASE_URL=sqlite:////data/webhook_bridge.db
-                  - CORS_ORIGINS=["*"]
+                  - CORS_ORIGINS_STR=https://alert.helm.uz
+                  - SECRET_KEY=${{ secrets.SECRET_KEY }}
+                  - WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET }}
+                  - ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
                 ports:
                   - "8000:8000"
                 volumes:

@@ -1,6 +1,6 @@
 """Email provider using SMTP."""
 
-import smtplib
+import aiosmtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Any, Dict
@@ -54,12 +54,15 @@ class EmailProvider(BaseProvider):
             part = MIMEText(text, "plain")
             msg.attach(part)
 
-            # Send email
-            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
-                if self.use_tls:
-                    server.starttls()
-                server.login(self.smtp_user, self.smtp_password)
-                server.send_message(msg)
+            # Send email (async)
+            await aiosmtplib.send(
+                msg,
+                hostname=self.smtp_host,
+                port=self.smtp_port,
+                username=self.smtp_user,
+                password=self.smtp_password,
+                use_tls=self.use_tls,
+            )
 
             logger.info("Successfully sent email notification")
             return True
@@ -76,12 +79,17 @@ class EmailProvider(BaseProvider):
             True if connection is successful
         """
         try:
-            with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=10) as server:
-                if self.use_tls:
-                    server.starttls()
-                server.login(self.smtp_user, self.smtp_password)
-                logger.info("Email SMTP connection test successful")
-                return True
+            # Test async SMTP connection
+            smtp = aiosmtplib.SMTP(
+                hostname=self.smtp_host, port=self.smtp_port, timeout=10
+            )
+            await smtp.connect()
+            if self.use_tls:
+                await smtp.starttls()
+            await smtp.login(self.smtp_user, self.smtp_password)
+            await smtp.quit()
+            logger.info("Email SMTP connection test successful")
+            return True
         except Exception as e:
             logger.error(f"Email connection test failed: {e}")
             return False

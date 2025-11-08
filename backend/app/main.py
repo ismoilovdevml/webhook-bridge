@@ -3,6 +3,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from .config import settings
 from .database import init_db
@@ -12,6 +15,11 @@ from .utils.logger import setup_logging, get_logger
 # Setup logging
 setup_logging(level=settings.LOG_LEVEL)
 logger = get_logger(__name__)
+
+# Setup rate limiter
+limiter = Limiter(key_func=get_remote_address)
+if not settings.RATE_LIMIT_ENABLED:
+    limiter.enabled = False
 
 
 @asynccontextmanager
@@ -64,6 +72,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Include API router
 app.include_router(api_router)
@@ -119,6 +131,51 @@ def root():
 def health_check():
     """Health check endpoint for monitoring and load balancers."""
     return {"status": "healthy", "service": "webhook-bridge", "version": "1.0.0"}
+
+
+@app.get(
+    "/health/live",
+    tags=["health"],
+    summary="Liveness probe",
+    description="Kubernetes liveness probe - checks if container is alive",
+)
+def liveness_check():
+    """
+    Liveness probe for Kubernetes.
+    Returns 200 if the application process is running.
+    """
+    return {"status": "alive", "service": "webhook-bridge"}
+
+
+@app.get(
+    "/health/ready",
+    tags=["health"],
+    summary="Readiness probe",
+    description="Kubernetes readiness probe - checks if ready to serve traffic",
+)
+def readiness_check():
+    """
+    Readiness probe for Kubernetes.
+    Returns 200 if the application is ready to handle requests.
+    Checks database connectivity and other dependencies.
+    """
+    from .database import SessionLocal
+    from fastapi import HTTPException
+
+    # Check database connectivity
+    try:
+        db = SessionLocal()
+        db.execute("SELECT 1")
+        db.close()
+    except Exception as e:
+        logger.error(f"Readiness check failed: Database error - {e}")
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    return {
+        "status": "ready",
+        "service": "webhook-bridge",
+        "checks": {"database": "ok"},
+    }
 
 
 if __name__ == "__main__":
