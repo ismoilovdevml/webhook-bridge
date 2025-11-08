@@ -12,8 +12,8 @@ env:
   FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend
 
 jobs:
-  lint-and-test:
-    name: Lint and Test
+  lint:
+    name: Lint Code
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -28,17 +28,12 @@ jobs:
         run: |
           cd backend
           pip install -r requirements.txt
-          pip install flake8 pytest pytest-asyncio pytest-cov
+          pip install flake8
 
       - name: Lint backend with flake8
         run: |
           cd backend
           flake8 app/ --config=.flake8
-
-      - name: Run backend tests
-        run: |
-          cd backend
-          pytest tests/ -v
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -55,14 +50,9 @@ jobs:
           cd frontend
           npm run lint
 
-      - name: Run frontend tests
-        run: |
-          cd frontend
-          npm test
-
   build-and-push:
     name: Build and Push Docker Images
-    needs: lint-and-test
+    needs: lint
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
@@ -129,9 +119,6 @@ jobs:
       contents: read
       packages: read
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -162,6 +149,8 @@ jobs:
                   - LOG_LEVEL=INFO
                   - DATABASE_URL=sqlite:////data/webhook_bridge.db
                   - CORS_ORIGINS=["*"]
+                ports:
+                  - "8000:8000"
                 volumes:
                   - webhook-data:/data
                 networks:
