@@ -115,9 +115,6 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-      packages: read
     steps:
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -126,71 +123,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Login to GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Create app directory
-            mkdir -p /opt/webhook-bridge
-            cd /opt/webhook-bridge
-
-            # Pull latest images
-            docker pull ${{ env.BACKEND_IMAGE }}:latest
-            docker pull ${{ env.FRONTEND_IMAGE }}:latest
-
-            # Create docker-compose.yml for production
-            cat > docker-compose.yml << 'EOF'
-            services:
-              backend:
-                image: ${{ env.BACKEND_IMAGE }}:latest
-                container_name: webhook-bridge-backend
-                restart: always
-                environment:
-                  - ENVIRONMENT=production
-                  - LOG_LEVEL=INFO
-                  - DATABASE_URL=sqlite:////data/webhook_bridge.db
-                  - CORS_ORIGINS_STR=https://alert.helm.uz
-                  - SECRET_KEY=${{ secrets.SECRET_KEY }}
-                  - WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET }}
-                  - ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
-                  - ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
-                  - ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
-                  - ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
-                ports:
-                  - "8000:8000"
-                volumes:
-                  - webhook-data:/data
-                networks:
-                  - webhook-network
-
-              frontend:
-                image: ${{ env.FRONTEND_IMAGE }}:latest
-                container_name: webhook-bridge-frontend
-                restart: always
-                ports:
-                  - "3000:80"
-                depends_on:
-                  - backend
-                networks:
-                  - webhook-network
-
-            volumes:
-              webhook-data:
-
-            networks:
-              webhook-network:
-            EOF
-
-            # Stop and remove old containers
-            docker compose down || true
-
-            # Start new containers
+            cd /root/webhook-bridge
+            docker compose down
+            docker system prune -af
             docker compose up -d
-
-            # Clean up old images
-            docker image prune -af --filter "until=72h"
-
-            # Show running containers
-            docker compose ps
-
-            # Show logs
-            docker compose logs --tail=50
