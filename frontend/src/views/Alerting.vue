@@ -396,7 +396,10 @@ const events = computed(() => eventsStore.events)
 const stats = computed(() => eventsStore.stats)
 
 const webhookUrl = computed(() => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+  // Use current origin for production, fallback to env var or localhost for development
+  const backendUrl = window.location.origin.includes('localhost')
+    ? (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')
+    : window.location.origin
   return `${backendUrl}/api/webhook/git`
 })
 
