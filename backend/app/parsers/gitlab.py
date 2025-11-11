@@ -15,6 +15,7 @@ class GitLabParser(BaseParser):
         """Parse GitLab webhook payload"""
         object_kind = payload.get("object_kind", "")
         event_name = payload.get("event_name", "")
+        event_type = payload.get("event_type", "")
 
         # Route to specific parser based on event type
         if object_kind == "push" or event_name == "push":
@@ -27,6 +28,10 @@ class GitLabParser(BaseParser):
             return self._parse_job(payload)
         elif object_kind == "issue":
             return self._parse_issue(payload)
+        elif object_kind == "work_item":  # GitLab 17+ Work Items
+            return self._parse_work_item(payload)
+        elif event_type == "confidential_note":  # Confidential comments
+            return self._parse_confidential_comment(payload)
         elif object_kind == "note":
             return self._parse_comment(payload)
         elif object_kind == "tag_push":
@@ -57,6 +62,8 @@ class GitLabParser(BaseParser):
             return self._parse_milestone(payload)
         elif object_kind == "vulnerability":
             return self._parse_vulnerability(payload)
+        elif event_name == "repository_update":  # Repository updates
+            return self._parse_repository_update(payload)
         else:
             return self._parse_unknown(payload)
 
@@ -84,10 +91,22 @@ class GitLabParser(BaseParser):
         user = payload.get("user", {})
         project = payload.get("project", {})
         mr = payload.get("object_attributes", {})
+        action = mr.get("action", "")
+
+        # Determine event type based on action
+        if action in ["approval", "approved", "unapproval", "unapproved"]:
+            event_type = "merge_request_approval"
+        else:
+            event_type = "merge_request"
+
+        # Extract approval information
+        approved = mr.get("approved", False)
+        approvals_required = mr.get("approvals_required", 0)
+        approvals_left = mr.get("approvals_left", 0)
 
         return ParsedEvent(
             platform="gitlab",
-            event_type="merge_request",
+            event_type=event_type,
             project=project.get("path_with_namespace", ""),
             project_url=project.get("web_url", ""),
             author=user.get("name", "Unknown"),
@@ -98,7 +117,10 @@ class GitLabParser(BaseParser):
             mr_description=self._truncate(mr.get("description", "")),
             mr_url=mr.get("url", ""),
             mr_state=mr.get("state", ""),
-            mr_action=mr.get("action", ""),
+            mr_action=action,
+            mr_approved=approved,
+            mr_approvals_required=approvals_required,
+            mr_approvals_left=approvals_left,
             source_branch=mr.get("source_branch", ""),
             target_branch=mr.get("target_branch", ""),
             raw_data=payload,
@@ -133,9 +155,15 @@ class GitLabParser(BaseParser):
         project = payload.get("project", {})
         issue = payload.get("object_attributes", {})
 
+        # Check if issue is confidential
+        is_confidential = issue.get("confidential", False)
+
+        # Check if it's a service desk issue
+        is_service_desk = issue.get("service_desk_reply_to") is not None
+
         return ParsedEvent(
             platform="gitlab",
-            event_type="issue",
+            event_type="confidential_issue" if is_confidential else "issue",
             project=project.get("path_with_namespace", ""),
             project_url=project.get("web_url", ""),
             author=user.get("name", "Unknown"),
@@ -147,6 +175,8 @@ class GitLabParser(BaseParser):
             issue_url=issue.get("url", ""),
             issue_state=issue.get("state", ""),
             issue_action=issue.get("action", ""),
+            issue_confidential=is_confidential,
+            issue_service_desk=is_service_desk,
             raw_data=payload,
         )
 
@@ -446,6 +476,75 @@ class GitLabParser(BaseParser):
             alert_state=vulnerability.get("state", ""),
             alert_url=vulnerability.get("url", ""),
             alert_description=self._truncate(vulnerability.get("title", "")),
+            raw_data=payload,
+        )
+
+    def _parse_work_item(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse work item event (GitLab 17+)"""
+        user = payload.get("user", {})
+        project = payload.get("project", {})
+        work_item = payload.get("object_attributes", {})
+
+        # Work items can be: Epic, Task, OKR, Test Case, Requirement, etc.
+        work_item_type = work_item.get("type", "WorkItem")
+        is_confidential = work_item.get("confidential", False)
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="work_item",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author=user.get("name", "Unknown"),
+            author_username=user.get("username", ""),
+            author_avatar=user.get("avatar_url", None),
+            issue_iid=work_item.get("iid"),
+            issue_title=work_item.get("title", ""),
+            issue_description=self._truncate(work_item.get("description", "")),
+            issue_url=work_item.get("url", ""),
+            issue_state=work_item.get("state", ""),
+            issue_action=work_item.get("action", ""),
+            issue_confidential=is_confidential,
+            work_item_type=work_item_type,
+            raw_data=payload,
+        )
+
+    def _parse_confidential_comment(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse confidential comment/note event"""
+        user = payload.get("user", {})
+        project = payload.get("project", {})
+        note = payload.get("object_attributes", {})
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="confidential_comment",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author=user.get("name", "Unknown"),
+            author_username=user.get("username", ""),
+            author_avatar=user.get("avatar_url", None),
+            comment_body=self._truncate(note.get("note", "")),
+            comment_url=note.get("url", ""),
+            comment_confidential=True,
+            raw_data=payload,
+        )
+
+    def _parse_repository_update(self, payload: Dict[str, Any]) -> ParsedEvent:
+        """Parse repository update event"""
+        project = payload.get("project", {})
+        user = payload.get("user", {})
+
+        # Repository updates include changes not related to push/MR
+        # Like repository settings, default branch changes, etc.
+        changes = payload.get("changes", [])
+
+        return ParsedEvent(
+            platform="gitlab",
+            event_type="repository_update",
+            project=project.get("path_with_namespace", ""),
+            project_url=project.get("web_url", ""),
+            author=user.get("name", "Unknown") if user else "System",
+            author_username=user.get("username", "") if user else "",
+            repo_changes=changes,
             raw_data=payload,
         )
 
