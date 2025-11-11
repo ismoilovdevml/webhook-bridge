@@ -152,6 +152,9 @@ jobs:
                   - SECRET_KEY=${{ secrets.SECRET_KEY }}
                   - WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET }}
                   - ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
+                  - ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
+                  - ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+                  - ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
                 ports:
                   - "8000:8000"
                 volumes:

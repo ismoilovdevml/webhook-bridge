@@ -4,20 +4,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from .config import settings
 from .database import init_db
 from .api import api_router
 from .utils.logger import setup_logging, get_logger
+from .utils.rate_limit import get_rate_limit_key
 
 # Setup logging
 setup_logging(level=settings.LOG_LEVEL)
 logger = get_logger(__name__)
 
-# Setup rate limiter
-limiter = Limiter(key_func=get_remote_address)
+# Setup rate limiter with proxy support
+limiter = Limiter(key_func=get_rate_limit_key)
 if not settings.RATE_LIMIT_ENABLED:
     limiter.enabled = False
 
@@ -172,11 +172,13 @@ def readiness_check():
     """
     from .database import SessionLocal
     from fastapi import HTTPException
+    from sqlalchemy import text
 
     # Check database connectivity
     try:
         db = SessionLocal()
-        db.execute("SELECT 1")
+        # Use text() for safe SQL execution
+        db.execute(text("SELECT 1"))
         db.close()
     except Exception as e:
         logger.error(f"Readiness check failed: Database error - {e}")

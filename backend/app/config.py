@@ -1,7 +1,9 @@
 """Application configuration"""
 
 from pydantic_settings import BaseSettings
-from typing import List
+from pydantic import model_validator
+from typing import List, Self
+import warnings
 
 
 class Settings(BaseSettings):
@@ -22,6 +24,51 @@ class Settings(BaseSettings):
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str = "change-this-password"
     ADMIN_EMAIL: str = "admin@localhost"
+
+    @model_validator(mode='after')
+    def validate_production_settings(self) -> Self:
+        """Validate that production environment has secure settings."""
+        if self.ENVIRONMENT == "production":
+            issues = []
+
+            # Check for default/weak SECRET_KEY
+            if self.SECRET_KEY in ["change-this-in-production", "", None]:
+                issues.append(
+                    "SECRET_KEY is using default value! "
+                    "Generate a strong key: "
+                    "python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+                )
+
+            # Check for default ADMIN_PASSWORD
+            if self.ADMIN_PASSWORD in ["change-this-password", "admin", ""]:
+                issues.append(
+                    "ADMIN_PASSWORD is using default/weak value! Set a strong password."
+                )
+
+            # Check SECRET_KEY strength
+            if len(self.SECRET_KEY) < 32:
+                issues.append(
+                    f"SECRET_KEY is too short ({len(self.SECRET_KEY)} chars). "
+                    "Use at least 32 characters."
+                )
+
+            # Warn if ENCRYPTION_KEY not set (it will be auto-generated with warning)
+            if not self.ENCRYPTION_KEY:
+                issues.append(
+                    "ENCRYPTION_KEY not set! It will be auto-generated but lost on restart."
+                )
+
+            if issues:
+                error_msg = (
+                    "\n" + "="*70 + "\n"
+                    "🔴 CRITICAL SECURITY WARNINGS IN PRODUCTION:\n\n" +
+                    "\n".join(f"  {i+1}. {issue}" for i, issue in enumerate(issues)) +
+                    "\n" + "="*70 + "\n"
+                )
+                # In production, these should be errors, not just warnings
+                raise ValueError(error_msg)
+
+        return self
 
     # API Authentication
     API_KEY_ENABLED: bool = True

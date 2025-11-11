@@ -4,22 +4,39 @@ from cryptography.fernet import Fernet
 from ..config import settings
 from typing import Optional
 import base64
+import os
 
 
 class EncryptionService:
     """Service for encrypting and decrypting sensitive data."""
 
     def __init__(self):
+        # Auto-generate encryption key if not set
         if not settings.ENCRYPTION_KEY:
-            raise ValueError("ENCRYPTION_KEY not set in environment")
+            # Generate a secure key
+            generated_key = Fernet.generate_key().decode()
 
-        # Ensure key is properly formatted
-        key = settings.ENCRYPTION_KEY
-        if len(key) != 44:  # Fernet keys are 44 characters
-            # Pad or derive key to proper length
-            key = base64.urlsafe_b64encode(key.encode().ljust(32)[:32])
+            # Log critical warning
+            from ..utils.logger import get_logger
+            logger = get_logger(__name__)
+            logger.critical(
+                "⚠️  ENCRYPTION_KEY not set! Auto-generated temporary key. "
+                "This key will be lost on restart. Set ENCRYPTION_KEY in environment: "
+                f"ENCRYPTION_KEY={generated_key}"
+            )
+
+            # Use generated key (temporary, will be lost on restart)
+            os.environ['ENCRYPTION_KEY'] = generated_key
+            settings.ENCRYPTION_KEY = generated_key
+            key = generated_key.encode()
         else:
-            key = key.encode()
+            # Ensure key is properly formatted
+            key = settings.ENCRYPTION_KEY
+            if len(key) != 44:  # Fernet keys are 44 characters
+                # Pad or derive key to proper length
+                key = base64.urlsafe_b64encode(key.encode().ljust(32)[:32])
+            else:
+                key = key.encode()
 
         self.cipher = Fernet(key)
 

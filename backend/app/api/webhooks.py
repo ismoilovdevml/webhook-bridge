@@ -5,7 +5,6 @@ from typing import Any, Dict, cast
 from datetime import datetime
 from sqlalchemy.orm import Session
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 from ..database import get_db
 from ..models.provider import Provider
@@ -20,11 +19,12 @@ from ..formatters import (
 )
 from ..utils.logger import get_logger
 from ..utils.exceptions import ParserError, ProviderError, FormatterError
+from ..utils.rate_limit import get_rate_limit_key
 from ..config import settings
 
 logger = get_logger(__name__)
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_rate_limit_key)
 
 
 # Formatter mapping for each provider type
@@ -37,80 +37,98 @@ FORMATTER_MAP = {
 
 
 async def process_and_send(
-    parsed_event: Any, provider_model: Provider, db: Session
+    parsed_event: Any, provider_id: int, provider_name: str, provider_type: str
 ) -> None:
     """
     Process and send notification to a provider.
 
     Args:
         parsed_event: Parsed webhook event
-        provider_model: Provider database model
-        db: Database session
-    """
-    # Decrypt provider config before using
-    decrypted_config = provider_model.get_decrypted_config()
+        provider_id: Provider ID
+        provider_name: Provider name
+        provider_type: Provider type
 
-    event_log = Event(
-        platform=parsed_event.platform,
-        event_type=parsed_event.event_type,
-        project=parsed_event.project,
-        author=parsed_event.author,
-        branch=parsed_event.ref,  # ref contains branch/tag name
-        provider_id=provider_model.id,
-        status="pending",
-        created_at=datetime.utcnow(),
-    )
+    Note:
+        Creates its own database session to avoid "Session is closed" errors
+        in background tasks.
+    """
+    # Create new database session for background task
+    from ..database import SessionLocal
+
+    db = SessionLocal()
 
     try:
-        # Get formatter for provider type
-        provider_type = cast(str, provider_model.type)
+        # Get provider with fresh session
+        provider_model = db.query(Provider).filter(Provider.id == provider_id).first()
+        if not provider_model:
+            logger.error(f"Provider {provider_id} not found")
+            return
 
-        formatter = cast(BaseFormatter, FORMATTER_MAP.get(provider_type))
-        if not formatter:
-            raise FormatterError(f"No formatter for provider type: {provider_type}")
+        # Decrypt provider config before using
+        decrypted_config = provider_model.get_decrypted_config()
 
-        # Format message
-        formatted_message = formatter.format(parsed_event)
-
-        # Get provider instance and send (use decrypted config)
-        provider = get_provider(provider_type, decrypted_config)
-
-        # Send with retry logic
-        from ..utils.retry import retry_with_backoff
-
-        success, result = await retry_with_backoff(
-            lambda: provider.send(formatted_message),
-            description=f"{provider_type} notification to {provider_model.name}",
+        event_log = Event(
+            platform=parsed_event.platform,
+            event_type=parsed_event.event_type,
+            project=parsed_event.project,
+            author=parsed_event.author,
+            branch=parsed_event.ref,  # ref contains branch/tag name
+            provider_id=provider_id,
+            status="pending",
+            created_at=datetime.utcnow(),
         )
 
-        # Handle result
-        if isinstance(result, Exception):
-            event_log.error_message = str(result)
+        try:
+            formatter = cast(BaseFormatter, FORMATTER_MAP.get(provider_type))
+            if not formatter:
+                raise FormatterError(f"No formatter for provider type: {provider_type}")
 
-        if success:
-            event_log.status = "success"
-            logger.info(
-                f"Sent {parsed_event.event_type} notification to "
-                f"{provider_model.name} ({provider_type})"
+            # Format message
+            formatted_message = formatter.format(parsed_event)
+
+            # Get provider instance and send (use decrypted config)
+            provider = get_provider(provider_type, decrypted_config)
+
+            # Send with retry logic
+            from ..utils.retry import retry_with_backoff
+
+            success, result = await retry_with_backoff(
+                lambda: provider.send(formatted_message),
+                description=f"{provider_type} notification to {provider_name}",
             )
-        else:
+
+            # Handle result
+            if isinstance(result, Exception):
+                event_log.error_message = str(result)
+
+            if success:
+                event_log.status = "success"
+                logger.info(
+                    f"Sent {parsed_event.event_type} notification to "
+                    f"{provider_name} ({provider_type})"
+                )
+            else:
+                event_log.status = "failed"
+                event_log.error_message = "Provider returned False"
+
+        except (ProviderError, FormatterError) as e:
             event_log.status = "failed"
-            event_log.error_message = "Provider returned False"
+            event_log.error_message = str(e)
+            logger.error(f"Failed to send to {provider_name}: {e}")
 
-    except (ProviderError, FormatterError) as e:
-        event_log.status = "failed"
-        event_log.error_message = str(e)
-        logger.error(f"Failed to send to {provider_model.name}: {e}")
+        except Exception as e:
+            event_log.status = "failed"
+            event_log.error_message = f"Unexpected error: {str(e)}"
+            logger.error(f"Unexpected error sending to {provider_name}: {e}")
 
-    except Exception as e:
-        event_log.status = "failed"
-        event_log.error_message = f"Unexpected error: {str(e)}"
-        logger.error(f"Unexpected error sending to {provider_model.name}: {e}")
+        finally:
+            # Save event log
+            db.add(event_log)
+            db.commit()
 
     finally:
-        # Save event log
-        db.add(event_log)
-        db.commit()
+        # Always close the session
+        db.close()
 
 
 @router.post(
@@ -257,7 +275,13 @@ async def receive_webhook(
 
         # Send to all active providers (in background)
         for provider in active_providers:
-            background_tasks.add_task(process_and_send, parsed_event, provider, db)
+            background_tasks.add_task(
+                process_and_send,
+                parsed_event,
+                provider.id,
+                provider.name,
+                provider.type
+            )
 
         return {
             "status": "success",

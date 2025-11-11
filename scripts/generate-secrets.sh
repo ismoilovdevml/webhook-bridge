@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Generate all required secrets for CI/CD deployment
+# This script helps you generate secure secrets for GitHub Actions
+
+set -e
+
+echo "🔐 Generating Secrets for CI/CD Deployment"
+echo "=========================================="
+echo ""
+
+# Generate security keys
+SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+ENCRYPTION_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+WEBHOOK_SECRET=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+ADMIN_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(16))")
+
+echo "📋 Copy these values to GitHub Repository Secrets:"
+echo "   Settings → Secrets and variables → Actions → New repository secret"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Name: SECRET_KEY"
+echo "Value: $SECRET_KEY"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Name: ENCRYPTION_KEY"
+echo "Value: $ENCRYPTION_KEY"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Name: WEBHOOK_SECRET"
+echo "Value: $WEBHOOK_SECRET"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Name: ADMIN_USERNAME"
+echo "Value: admin"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Name: ADMIN_PASSWORD"
+echo "Value: $ADMIN_PASSWORD"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Name: ADMIN_EMAIL"
+echo "Value: admin@yourdomain.com"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📝 Additional Secrets Required (Set manually):"
+echo ""
+echo "Name: SERVER_IP"
+echo "Value: <your-production-server-ip>"
+echo "Example: 192.168.1.100"
+echo ""
+echo "Name: SERVER_USERNAME"
+echo "Value: <ssh-username>"
+echo "Example: ubuntu"
+echo ""
+echo "Name: SSH_PRIVATE_KEY"
+echo "Value: <your-ssh-private-key>"
+echo "Example: cat ~/.ssh/id_rsa"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "⚠️  IMPORTANT:"
+echo "   • Save these values securely - they will NOT be shown again"
+echo "   • Add all secrets to GitHub before pushing to main branch"
+echo "   • Never commit these values to git"
+echo ""
+echo "📖 Full documentation: .github/DEPLOYMENT.md"
+echo ""
+echo "✅ Secrets generated successfully!"

@@ -39,17 +39,27 @@ class Provider(Base):
             Decrypted configuration dictionary
         """
         from app.utils.encryption import decrypt_field
+        from app.utils.logger import get_logger
 
+        logger = get_logger(__name__)
         config = self.config.copy() if self.config else {}
         sensitive_fields = self.SENSITIVE_FIELDS.get(self.type, [])
 
         for field in sensitive_fields:
             if field in config and config[field]:
                 try:
-                    config[field] = decrypt_field(config[field])
-                except Exception:
-                    # If decryption fails, assume it's not encrypted (legacy data)
-                    pass
+                    decrypted = decrypt_field(config[field])
+                    config[field] = decrypted
+                except Exception as e:
+                    # Log decryption failure for security audit
+                    logger.warning(
+                        f"Failed to decrypt field '{field}' for provider "
+                        f"'{self.name}' (ID: {self.id}). This may indicate "
+                        f"legacy unencrypted data or encryption key mismatch. "
+                        f"Error: {type(e).__name__}"
+                    )
+                    # Keep encrypted value to prevent data leak
+                    # Do NOT assume it's plaintext - this could be a security issue
 
         return config
 
