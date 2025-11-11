@@ -183,7 +183,7 @@ class TemplateEngine:
             logger.debug(f"Rendered template for {event_type}")
             return rendered
 
-        except TemplateNotFound as e:
+        except TemplateNotFound:
             logger.error(f"Template not found: {event_type}")
             raise
         except TemplateSyntaxError as e:

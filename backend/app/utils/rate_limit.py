@@ -1,6 +1,5 @@
 """Rate limiting utilities with proxy support."""
 
-from typing import Optional
 from fastapi import Request
 
 

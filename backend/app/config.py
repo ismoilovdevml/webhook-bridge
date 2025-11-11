@@ -3,7 +3,6 @@
 from pydantic_settings import BaseSettings
 from pydantic import model_validator
 from typing import List, Self
-import warnings
 
 
 class Settings(BaseSettings):
@@ -60,10 +59,11 @@ class Settings(BaseSettings):
 
             if issues:
                 error_msg = (
-                    "\n" + "="*70 + "\n"
-                    "🔴 CRITICAL SECURITY WARNINGS IN PRODUCTION:\n\n" +
-                    "\n".join(f"  {i+1}. {issue}" for i, issue in enumerate(issues)) +
-                    "\n" + "="*70 + "\n"
+                    "\n" + "=" * 70 + "\n"
+                    "🔴 CRITICAL SECURITY WARNINGS IN PRODUCTION:\n\n"
+                    + "\n".join(f"  {i + 1}. {issue}"
+                                for i, issue in enumerate(issues))
+                    + "\n" + "=" * 70 + "\n"
                 )
                 # In production, these should be errors, not just warnings
                 raise ValueError(error_msg)
