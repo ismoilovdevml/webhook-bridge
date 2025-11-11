@@ -115,6 +115,8 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      packages: read
     steps:
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -123,7 +125,9 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             cd /root/webhook-bridge
+            docker compose pull
             docker compose down
             docker system prune -af
             docker compose up -d
